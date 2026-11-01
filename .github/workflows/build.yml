@@ -1,0 +1,180 @@
+name: CI
+
+# 作りは browserhive-specs と同じ。公開は GitHub Pages が main を直接配る（Deploy from a branch、
+# main の根）。この workflow は公開の経路に居ないので、する仕事は検査だけ。壊れた原稿の merge を
+# 止められるのはここだけなので、build は blocking にしてある。
+#
+# ReSpec は閲覧者のブラウザで走る。w3.org からは読まず、repo に同梱した assets/js/respec-w3c.js を
+# 相対パスで読む。同じオリジンのファイルが引けなくなるのは「無い」か「パスが違う」ときだけで、それは
+# assets の job がブラウザ無しで見ている。
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # 書き込み権限は要らない。この job はどこへも push しない。
+    strategy:
+      matrix:
+        doc:
+          # 版を足したらここにも足す。焼かれない版は、壊れていても気づけない。
+          - 1.0.0
+          - 1.0.0/ja
+    steps:
+      - uses: actions/checkout@v4
+
+      # 2 回試す。ReSpec のビルドは 20 秒の総予算で走り、runner が混んでブラウザの起動が予算を
+      # 食い尽くすと、原稿が正しくても落ちる（browserhive-specs で実測: 起動 19.648 秒 → 残り 352 ms）。
+      # 予算は spec-prod が `-t 20` と決め打ちしていて、入力からは触れない。flake は 2 回目でたいてい
+      # 通り、壊れた原稿は何回でも同じ場所で落ちるので、赤は本物のエラーだけになる。
+      - uses: w3c/spec-prod@v2
+        id: try1
+        continue-on-error: true
+        with:
+          TOOLCHAIN: respec
+          SOURCE: ${{ matrix.doc }}/index.html
+          DESTINATION: ${{ matrix.doc }}/index.html
+          VALIDATE_MARKUP: true
+          VALIDATE_LINKS: false
+          ARTIFACT_NAME: built-${{ strategy.job-index }}
+
+      # continue-on-error を付けるのは 1 回目だけ。job 全体は blocking のままにする。
+      - uses: w3c/spec-prod@v2
+        if: steps.try1.outcome == 'failure'
+        with:
+          TOOLCHAIN: respec
+          SOURCE: ${{ matrix.doc }}/index.html
+          DESTINATION: ${{ matrix.doc }}/index.html
+          # markup 検査（W3C nu validator）は既定で true。依存しているので明記する。
+          VALIDATE_MARKUP: true
+          # spec-prod のリンク検査は使えない。link-checker 1.4.2 が superagent 3.8.3 に依存していて、
+          # リダイレクトを踏むとツール自体が TypeError で落ちる。ReSpec は github: の設定から
+          # .../issues/new/choose を作り、未ログインだと 302 でログイン画面へ飛ぶので、何もしなくても
+          # 必ず踏む。代わりに下の linkcheck の job が、リダイレクトを追って最終状態を見る。
+          VALIDATE_LINKS: false
+          ARTIFACT_NAME: built-${{ strategy.job-index }}
+
+  assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 各原稿から同梱 ReSpec が解決すること
+        run: |
+          # 閲覧者のブラウザで描く以上、script が引けなければページは崩れる。崩れても HTTP は 200
+          # なので、公開の後に気づく手立てが無い。同じオリジンに置いてあるので、壊れ方は「ファイルが
+          # 無い」か「パスが違う」の 2 つしかなく、どちらもブラウザを起こさずに確かめられる。
+          FAIL=0
+          for doc in 1.0.0/index.html 1.0.0/ja/index.html \
+                     latest/index.html latest/ja/index.html; do
+            src=$(grep -o 'src="[^"]*respec[^"]*"' "$doc" | sed 's/src="//; s/"$//')
+            if [ -z "$src" ]; then
+              echo "::error::$doc が ReSpec を読み込んでいない"
+              FAIL=1
+              continue
+            fi
+            target="$(dirname "$doc")/$src"
+            if [ -f "$target" ]; then
+              echo "  ok   $doc -> $src"
+            else
+              echo "::error::$doc -> $src が解決しない"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+      - name: 最新の版の節が錨を原稿に持つこと
+        run: |
+          # browserhive の要求の目録は、この仕様の節を錨で指し、その錨が在るかをブラウザを起こさずに
+          # 原稿から読む。ReSpec は id の無い section にも描くときに見出しから id を作るが、それは
+          # 原稿には現れないので、静的に読む側からは見えない。
+          #
+          # 見るのは latest/ だけ。新しい版を出すときは latest/ をその版で上書きするので、ここが
+          # いつも最新の版になる。
+          #
+          # Conformance の節だけは id を書かない。ReSpec は section#conformance を特別に扱い、書くと
+          # RFC 2119 の定型文が入り、参考文献が Informative から Normative に変わる（browserhive-specs
+          # の 1.14.0 で試した）。描画を変えずには書けない。
+          FAIL=0
+          for doc in latest/index.html latest/ja/index.html; do
+            perl -0777 -ne '
+              my $bad = 0;
+              while (/<section\b(?![^>]*\bid=)[^>]*>\s*(?:<h([2-6])\b[^>]*>(.*?)<\/h\1>)?/gs) {
+                my $t = defined $2 ? $2 : "(見出しが無い)";
+                $t =~ s/<[^>]+>//g;
+                next if $t eq "Conformance";
+                print "::error file=${ARGV}::id の無い section: $t\n";
+                $bad = 1;
+              }
+              while (/<h([2-6])\b[^>]*>(.*?)<\/h\1>/gs) {
+                my $start = $-[0];
+                my $t = $2;
+                $t =~ s/<[^>]+>//g;
+                next if substr($_, 0, $start) =~ /<section\b[^>]*>\s*\z/;
+                print "::error file=${ARGV}::section の最初の子でない見出し: $t\n";
+                $bad = 1;
+              }
+              exit $bad;
+            ' "$doc" && echo "  ok   $doc" || FAIL=1
+          done
+          exit $FAIL
+
+  linkcheck:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          # merge しない。どの artifact も index.html という名前なので、混ぜると片方が上書きされて
+          # 検査されないまま緑になる。
+          pattern: built-*
+          path: built
+      - name: Every link in the built document resolves
+        run: |
+          # 外部リンクの検査は、一過性の失敗と本物の切れを見分けないと使いものにならない
+          # （browserhive-specs は初回で 429 と 503 を踏み、どちらも数十秒後には 200 を返した）。
+          #
+          # 判定:
+          #   200            通す
+          #   429 / 5xx / 0  間を置いて再試行。最後まで駄目なら落とす
+          #   その他 4xx     即座に落とす（本物の切れ。iso.org はこの User-Agent に 403 を返すので、
+          #                  原稿から href で指さない）
+          check() {
+            local url=$1 code
+            for attempt in 1 2 3; do
+              code=$(curl -sL -o /dev/null -w '%{http_code}' \
+                     -A 'Mozilla/5.0 (compatible; browserhive-warc-spec linkcheck)' \
+                     --max-time 30 "$url" || echo 000)
+              case "$code" in
+                200) echo "  200 $url"; return 0 ;;
+                429|5??|000) sleep $((attempt * 10)) ;;
+                *) echo "::error::$url -> $code"; return 1 ;;
+              esac
+            done
+            echo "::error::$url -> $code (3 回試して駄目)"
+            return 1
+          }
+
+          # 検査するのは「著者が書いたリンク」だけ。ReSpec が github: の設定から作るリンク
+          # （repo・commits・issues・pulls）と、この repo の github.io は構成から決まるので外す
+          # （GitHub は runner からの未認証の読みを強く絞り、github.io は最初の公開までは 404）。
+          OWNER=${GITHUB_REPOSITORY%%/*}
+          SKIP="^https://(github\.com/${GITHUB_REPOSITORY}|${OWNER}\.github\.io/${GITHUB_REPOSITORY#*/})"
+
+          FAIL=0
+          # 落としたすべての文書を対象にする。1 本も見つけられないまま緑にならないよう、件数を
+          # 確かめてから回る。
+          DOCS=$(find built -name '*.html' | sort)
+          test -n "$DOCS" || { echo "::error::検査対象の HTML が無い"; exit 1; }
+          echo "対象: $(echo "$DOCS" | wc -l) 文書"
+          REFS=$(grep -hoE '(href|src)="https?://[^"]*"' $DOCS \
+                 | sed -E 's/^(href|src)="//; s/"$//' | sort -u)
+          for U in $REFS; do
+            if echo "$U" | grep -qE "$SKIP"; then
+              echo "  skip $U (toolchain が生成した定型リンク)"
+              continue
+            fi
+            check "$U" || FAIL=1
+          done
+          exit $FAIL

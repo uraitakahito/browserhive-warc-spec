@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>BrowserHive WARC Profile 1.0.0 (日本語訳)</title>
+<!--
+  英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
+
+  見出しは訳さない。節の id は原稿に書いてあるが、英語版と見出しを揃えておくと、
+  節への参照が言語をまたいでも同じ名前で通る（browserhive-specs と同じ作法）。
+-->
+<script src="../../assets/js/respec-w3c.js" class="remove" defer></script>
+<script class="remove">
+  var respecConfig = {
+    specStatus: "unofficial",
+    shortName: "browserhive-warc-profile-ja",
+    // 指す先は動く `latest/ja/` で、その時点で最新の版の写し。転送ではなく、版を出すたびに
+    // 新しい版で上書きする。
+    latestVersion: "https://uraitakahito.github.io/browserhive-warc-spec/latest/ja/",
+    editors: [{ name: "uraitakahito", url: "https://github.com/uraitakahito" }],
+    github: "uraitakahito/browserhive-warc-spec",
+    // 参照はここで完結させる。SpecRef を引かない —— 外のサービスの可用性で、本文と無関係に
+    // CI が赤くならないように。
+    localBiblio: {
+      WARC: {
+        title: "The WARC Format 1.1",
+        // 正典は ISO 28500:2017。iso.org は linkcheck に 403 を返すので、IIPC の写しを指す。
+        href: "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
+        publisher: "IIPC",
+        version: "1.1",
+      },
+      "BROWSERHIVE-WACZ-PROFILE": {
+        title: "BrowserHive WACZ Profile",
+        href: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/latest/ja/",
+        publisher: "BrowserHive",
+      },
+      RFC2119: {
+        title: "Key words for use in RFCs to Indicate Requirement Levels",
+        href: "https://www.rfc-editor.org/rfc/rfc2119",
+        authors: ["S. Bradner"],
+        date: "March 1997",
+        publisher: "IETF",
+      },
+      RFC9112: {
+        title: "HTTP/1.1",
+        href: "https://www.rfc-editor.org/rfc/rfc9112",
+        authors: ["R. Fielding", "M. Nottingham", "J. Reschke"],
+        date: "June 2022",
+        publisher: "IETF",
+      },
+    },
+    lint: false,
+  };
+</script>
+</head>
+<body>
+
+<section id="abstract">
+  <p class="note" title="非公式翻訳 (Unofficial translation)">
+    これは BrowserHive WARC Profile 1.0.0 の日本語訳です。<strong>正典は
+    <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
+    訳と原典が食い違った場合は原典が優先します。
+  </p>
+  <p>
+    本仕様は [[WARC]] のプロファイルです。BrowserHive が WARC ファイルにどのレコードを書き、
+    それぞれが何を持つかを定めます。ファイルだけを手にした読み手が、その取り込みが何を記録し、
+    何を残さなかったかを判断できるようにするためです。
+  </p>
+</section>
+
+<section id="sotd">
+  <p>
+    この版は書いている途中です。どこからも参照される前に、節を足します。
+  </p>
+</section>
+
+<section>
+  <h2>Conformance</h2>
+  <p>
+    本仕様における <em class="rfc2119">MUST</em>（〜しなければならない）、
+    <em class="rfc2119">MUST NOT</em>（〜してはならない）、
+    <em class="rfc2119">SHOULD</em>（〜すべきである）、
+    <em class="rfc2119">MAY</em>（〜してもよい）は、[[RFC2119]] の記述どおりに解釈します。
+  </p>
+</section>
+
+</body>
+</html>

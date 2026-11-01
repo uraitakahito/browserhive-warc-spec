@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BrowserHive WARC Profile 1.0.0</title>
+<!--
+  ReSpec is bundled in this repository and loaded by a relative path. GitHub
+  Pages serves the main branch as it is, so the script runs in the reader's
+  browser. CI does not publish anything: it checks that each document builds
+  and that this path resolves (.github/workflows/build.yml).
+-->
+<script src="../assets/js/respec-w3c.js" class="remove" defer></script>
+<script class="remove">
+  var respecConfig = {
+    specStatus: "unofficial",
+    shortName: "browserhive-warc-profile",
+    // It points at the moving `latest/`, a copy of whichever version is newest.
+    // It is not a redirect: each release overwrites it with the new version, so
+    // this row stays true once a newer version exists.
+    latestVersion: "https://uraitakahito.github.io/browserhive-warc-spec/latest/",
+    editors: [{ name: "uraitakahito", url: "https://github.com/uraitakahito" }],
+    github: "uraitakahito/browserhive-warc-spec",
+    // References are resolved here, not through SpecRef, so that the availability
+    // of an outside service cannot turn CI red for reasons unrelated to the text.
+    localBiblio: {
+      WARC: {
+        title: "The WARC Format 1.1",
+        // The authoritative text is ISO 28500:2017. iso.org answers the link
+        // checker with 403, so the IIPC copy is cited instead.
+        href: "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
+        publisher: "IIPC",
+        version: "1.1",
+      },
+      "BROWSERHIVE-WACZ-PROFILE": {
+        title: "BrowserHive WACZ Profile",
+        href: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/latest/",
+        publisher: "BrowserHive",
+      },
+      RFC2119: {
+        title: "Key words for use in RFCs to Indicate Requirement Levels",
+        href: "https://www.rfc-editor.org/rfc/rfc2119",
+        authors: ["S. Bradner"],
+        date: "March 1997",
+        publisher: "IETF",
+      },
+      RFC9112: {
+        title: "HTTP/1.1",
+        href: "https://www.rfc-editor.org/rfc/rfc9112",
+        authors: ["R. Fielding", "M. Nottingham", "J. Reschke"],
+        date: "June 2022",
+        publisher: "IETF",
+      },
+    },
+    lint: false,
+  };
+</script>
+</head>
+<body>
+
+<section id="abstract">
+  <p>
+    This specification profiles [[WARC]]. It states which records BrowserHive
+    writes into a WARC file and what each of them holds, so that a reader holding
+    only the file can tell what the capture recorded and what it left out.
+  </p>
+</section>
+
+<section id="sotd">
+  <p>
+    This version is being written. Its sections are added before it is
+    referenced by anything.
+  </p>
+</section>
+
+<section>
+  <h2>Conformance</h2>
+  <p>
+    Where this specification uses the terms <em class="rfc2119">MUST</em>,
+    <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em> and
+    <em class="rfc2119">MAY</em>, they are to be interpreted as described in
+    [[RFC2119]].
+  </p>
+</section>
+
+</body>
+</html>
