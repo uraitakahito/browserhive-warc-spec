@@ -61,24 +61,441 @@
   <p>
     This specification profiles [[WARC]]. It states which records BrowserHive
     writes into a WARC file and what each of them holds, so that a reader holding
-    only the file can tell what the capture recorded and what it left out.
+    only the file can tell what the capture recorded, what it left out, and why.
   </p>
 </section>
 
 <section id="sotd">
   <p>
-    This version is being written. Its sections are added before it is
-    referenced by anything.
+    This is a working draft. It describes what BrowserHive writes today. It has
+    no standing beyond that project and is not endorsed by the publishers of
+    [[WARC]].
+  </p>
+  <p class="note" title="Where these rules came from">
+    Up to its version 1.15.0, [[BROWSERHIVE-WACZ-PROFILE]] held the rules for
+    the WARC records BrowserHive writes. They moved here so that a WARC file can
+    name the rules it follows by itself (see <a href="#warcinfo"></a>), and so
+    that a file read apart from its package still means what it says.
+    BrowserHive WACZ Profile 1.16.0 requires the WARC files of a package to
+    conform to this version.
+  </p>
+  <p class="note" title="Not the WARC-Profile field">
+    [[WARC]] defines a <code>WARC-Profile</code> header field, which says how a
+    <code>revisit</code> record is to be read. This specification has nothing to
+    do with that field.
+  </p>
+</section>
+
+<section id="introduction" class="informative">
+  <h2>Introduction</h2>
+  <p>
+    [[WARC]] says how records are framed and which header fields they carry. It
+    leaves to the writer what to put in a payload, which records to write about a
+    body it did not keep or a request it did not send, and how to say why. A
+    reader of a BrowserHive WARC file needs those answers, and they are knowable
+    only while the file is being written.
+  </p>
+  <p>
+    This profile fixes them. It changes nothing [[WARC]] says: the records it
+    adds are <code>metadata</code> records, which a reader unaware of this
+    profile can pass over.
+  </p>
+  <p>
+    BrowserHive writes its WARC files into a WACZ package, whose rules are in
+    [[BROWSERHIVE-WACZ-PROFILE]]. The rules here concern only what a single WARC
+    file holds, so that they still hold for a file taken out of its package.
   </p>
 </section>
 
 <section>
   <h2>Conformance</h2>
   <p>
+    The conformance target of this specification is a WARC file: a single file.
+    Conformance is a property of files, not of the software that writes them.
+  </p>
+  <p>
+    A conforming file is a conforming [[WARC]] file. This specification adds
+    requirements. It removes none, and it relaxes none.
+  </p>
+  <p>
     Where this specification uses the terms <em class="rfc2119">MUST</em>,
     <em class="rfc2119">MUST NOT</em>, <em class="rfc2119">SHOULD</em> and
     <em class="rfc2119">MAY</em>, they are to be interpreted as described in
     [[RFC2119]].
+  </p>
+  <p>
+    The <dfn>producer</dfn> is the software that writes the file. A
+    <dfn>capture</dfn> is one run of the producer against one page. A capture
+    writes one or more WARC files.
+  </p>
+</section>
+
+<section id="warcinfo">
+  <h2>The <code>warcinfo</code> record</h2>
+  <p>
+    Each WARC file <em class="rfc2119">MUST</em> begin with a
+    <code>warcinfo</code> record whose <code>WARC-Filename</code> is the name of
+    the file that holds it. Its <code>application/warc-fields</code> body
+    <em class="rfc2119">MUST</em> contain the fields below marked as required.
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>conformsTo</code></td><td>yes</td>
+          <td>The URL of the version of this specification the file claims to
+          satisfy. For this version,
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/</code>.
+          The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
+      <tr><td><code>format</code></td><td>yes</td>
+          <td><code>WARC File Format 1.1</code>.</td></tr>
+      <tr><td><code>software</code></td><td>yes</td>
+          <td>The producer and its version.</td></tr>
+      <tr><td><code>robots-policy</code></td><td>no</td>
+          <td><code>ignore</code>: the producer does not consult
+          <code>robots.txt</code>. Whether a page is to be captured at all is for
+          whoever asks for the capture to decide.</td></tr>
+      <tr><td><code>description</code></td><td>no</td>
+          <td>Free text that says what was captured.</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: warcinfo
+WARC-Record-ID: &lt;urn:uuid:0b7e8a52-6a63-4f0e-9d0b-6f1c2a3e4d5f&gt;
+WARC-Date: 2026-11-01T02:14:31.882Z
+WARC-Filename: data-000.warc.gz
+Content-Type: application/warc-fields
+Content-Length: 203
+
+software: browserhive/22.1.0
+format: WARC File Format 1.1
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/
+robots-policy: ignore
+description: Capture of https://shop.example/</pre>
+  <p>
+    <code>conformsTo</code> names this profile, not [[WARC]]. The base format is
+    named by <code>format</code>, and every conforming file is a WARC 1.1 file
+    (see Conformance). A single declaration leaves a reader nothing to choose
+    between. A reader <em class="rfc2119">MUST NOT</em> infer conformance to a
+    version of this specification from anything other than
+    <code>conformsTo</code>.
+  </p>
+</section>
+
+<section id="files">
+  <h2>Records and files</h2>
+  <p>
+    A record <em class="rfc2119">MUST NOT</em> span two files: a record is
+    written whole into one file, and the producer writes no
+    <code>continuation</code> records. The records of one <a>exchange</a>
+    <em class="rfc2119">MUST</em> be in the same file.
+  </p>
+  <p class="note">
+    A capture may write more than one file. How those files are named, and when
+    the producer starts a new one, are rules of the package that holds them, not
+    of a single file. See [[BROWSERHIVE-WACZ-PROFILE]].
+  </p>
+</section>
+
+<section id="exchanges">
+  <h2>Exchanges</h2>
+  <p>
+    An <dfn>exchange</dfn> is one request the browser sent and the response it
+    received to it. The producer records an exchange as a <code>request</code>
+    record and a <code>response</code> record, and, when the response is recorded
+    without its body, a <a>record of a body not kept</a>. The
+    <code>request</code> record and the <code>response</code> record
+    <em class="rfc2119">MUST</em> each name the other in
+    <code>WARC-Concurrent-To</code>.
+  </p>
+  <p>
+    The records of one exchange <em class="rfc2119">MUST</em> carry the same
+    <code>WARC-Date</code>: the time at which the browser began the request, as
+    the browser reported it. A response that redirects ends its exchange. The request
+    that follows the redirect begins another exchange, with its own time.
+  </p>
+  <p>
+    The payload of a <code>response</code> record
+    <em class="rfc2119">MUST</em> be in HTTP/1.1 form [[RFC9112]], whatever
+    protocol version carried the exchange: a status line, then the header fields,
+    then the body.
+  </p>
+  <p class="note" title="Why one time for the whole exchange">
+    [[WARC]] has the date of a record be the moment its capture began, and has
+    the records of one capture event share one date. For an exchange, that moment
+    is when the browser began the request. The time at which the producer
+    assembles the records is later by however long the body took to arrive, which
+    for a large body can be minutes, and it says when the producer wrote rather
+    than when the page was fetched.
+  </p>
+  <p class="note" title="Why HTTP/1.1">
+    Existing readers of WARC files parse the payload of a <code>response</code>
+    record as HTTP/1.1. An exchange carried over HTTP/2 or HTTP/3 is therefore
+    written in HTTP/1.1 form, and the protocol version that carried it is not
+    recorded in the payload.
+  </p>
+</section>
+
+<section id="payloads">
+  <h2>Payloads</h2>
+  <p>
+    A browser turns a text body into characters before anything else sees it,
+    and hands it to tools as characters. Written back out as bytes, the result is
+    the body in whatever encoding the writer chose &mdash; not the one the origin
+    sent, unless the two happen to agree. The requirements in this section keep
+    the payload of each record to the bytes that crossed the wire, so that a
+    payload digest vouches for what the origin and the browser sent.
+  </p>
+
+  <section id="response-payloads">
+    <h3>Response payloads</h3>
+    <p>
+      The payload of a <code>response</code> record that holds a body
+      <em class="rfc2119">MUST</em> be the bytes the server sent, with the
+      content-coding named in its <code>Content-Encoding</code> removed and
+      nothing else changed. In particular, a producer
+      <em class="rfc2119">MUST NOT</em> convert a text body from one character
+      encoding to another: a body sent in Shift_JIS is stored as those Shift_JIS
+      bytes, and a body whose media type declares no charset is stored as it was
+      sent, whatever charset a browser would have read it with.
+    </p>
+    <p>
+      A <code>data:</code> URL is sent by no server. Its payload is the data the
+      URL carries, decoded as the URL defines (base64, or percent-encoding as
+      bytes), and likewise not converted.
+    </p>
+    <p>
+      A producer that cannot obtain a body as bytes
+      <em class="rfc2119">MUST NOT</em> store one rebuilt from decoded text. It
+      records the response with an empty payload and a
+      <a>record of a body not kept</a> whose <code>truncated</code> is
+      <code>not-intercepted</code>.
+    </p>
+  </section>
+
+  <section id="request-payloads">
+    <h3>Request payloads</h3>
+    <p>
+      The payload of a <code>request</code> record that holds a body
+      <em class="rfc2119">MUST</em> be the bytes the browser sent as the request
+      body. A producer that cannot obtain them as bytes
+      <em class="rfc2119">MUST NOT</em> store a body rebuilt from decoded text;
+      it records the request without one.
+    </p>
+  </section>
+</section>
+
+<section id="records-of-bodies-not-kept">
+  <h2>Records of bodies not kept</h2>
+  <p>
+    For each response recorded without the body the server sent, other than a
+    response that has no body to send (one to a <code>HEAD</code> request, and
+    status <code>1xx</code>, <code>204</code>, <code>3xx</code> and
+    <code>304</code>), the file that holds the <code>response</code> record
+    <em class="rfc2119">MUST</em> also hold a <code>metadata</code> record,
+    hereafter a <dfn>record of a body not kept</dfn>. Its
+    <code>WARC-Target-URI</code> <em class="rfc2119">MUST</em> be the URL of the
+    response, its <code>WARC-Refers-To</code> <em class="rfc2119">MUST</em> be
+    the <code>WARC-Record-ID</code> of the <code>response</code> record, and its
+    <code>application/warc-fields</code> body <em class="rfc2119">MUST</em>
+    contain:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>truncated</code></td><td>yes</td>
+          <td>Why the record holds no body. One of the values below.</td></tr>
+      <tr><td><code>encodedDataLength</code></td><td>no</td>
+          <td>The size of the whole response as it crossed the wire, in bytes,
+          when the producer knows it.</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><code>too-large</code> &mdash; the body was larger than the limit the
+        producer placed on a single body.</li>
+    <li><code>task-cap</code> &mdash; keeping the body would have taken the
+        bodies the capture kept past the limit the producer placed on all of
+        them.</li>
+    <li><code>url-policy</code> &mdash; a URL policy of the producer said to keep
+        the exchange without its body.</li>
+    <li><code>content-type</code> &mdash; a media type policy of the producer
+        said to keep no body of the response's media type.</li>
+    <li><code>not-intercepted</code> &mdash; the body crossed the wire, but the
+        producer could not obtain it as bytes (see
+        <a href="#response-payloads"></a>).</li>
+  </ul>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://example.com/api/feed
+WARC-Date: 2026-10-30T02:14:31.882Z
+WARC-Refers-To: &lt;urn:uuid:5c1f0b8e-2a77-4a5e-9d3e-0f6f3b1d2c4a&gt;
+Content-Type: application/warc-fields
+Content-Length: 53
+
+truncated: not-intercepted
+encodedDataLength: 4821</pre>
+  <p>
+    The <code>response</code> record of a body dropped at a size limit
+    (<code>too-large</code> or <code>task-cap</code>)
+    <em class="rfc2119">MUST</em> carry <code>WARC-Truncated: length</code>, and
+    that of a body that was not intercepted <em class="rfc2119">MUST</em> carry
+    <code>WARC-Truncated: unspecified</code>, so that a reader of the WARC file
+    alone does not take the empty payload for the body.
+  </p>
+  <p class="note">
+    A body a policy omitted was not cut short, so its <code>response</code>
+    record carries no <code>WARC-Truncated</code>. Which limits and policies were
+    in force is recorded outside the WARC file, by the package that holds it
+    ([[BROWSERHIVE-WACZ-PROFILE]]).
+  </p>
+</section>
+
+<section id="records-of-withheld-requests">
+  <h2>Records of withheld requests</h2>
+  <p>
+    For each request the producer withheld by a policy, a WARC file of the
+    capture <em class="rfc2119">MUST</em> contain a <code>metadata</code> record,
+    hereafter a <dfn>record of a withheld request</dfn>. Its
+    <code>WARC-Target-URI</code> <em class="rfc2119">MUST</em> be the request
+    URL, and its <code>application/warc-fields</code> body
+    <em class="rfc2119">MUST</em> contain:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>action</code></td><td>yes</td>
+          <td>What the producer did. <code>deny</code>: it did not send the
+          request, so nothing left the capturing machine for that URL.
+          <code>no-archive</code>: it let the request go and the origin answered,
+          but it kept nothing of the exchange beyond this record. This is the
+          field that says whether the request was sent.</td></tr>
+      <tr><td><code>pattern</code></td><td>yes</td>
+          <td>The pattern that matched, spelled exactly as the producer's policy
+          spells it, so that a reader can find it there.</td></tr>
+      <tr><td><code>method</code></td><td>yes</td>
+          <td>The request method.</td></tr>
+      <tr><td><code>resourceType</code></td><td>no</td>
+          <td>What the page was fetching, when the capture knows it.</td></tr>
+      <tr><td><code>target</code></td><td>no</td>
+          <td>What made the request: <code>page</code>, <code>iframe</code> (a
+          frame the browser runs apart from the page, typically one from another
+          site), <code>worker</code> or <code>service_worker</code>. Absent when
+          the capture does not say.</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://www.example-analytics.com/collect?v=2
+WARC-Date: 2026-09-06T02:14:31.882Z
+Content-Type: application/warc-fields
+Content-Length: 87
+
+action: deny
+pattern: *://*.example-analytics.com/*
+method: POST
+resourceType: XHR</pre>
+  <p>
+    A <code>deny</code> reaches every request the capture causes, so its record
+    <em class="rfc2119">MUST</em> be written whichever part of the page made the
+    request, including parts whose traffic the producer does not otherwise
+    record.
+  </p>
+  <p>
+    A record of a withheld request carries no response and no body. It asserts
+    that the page asked for the URL and that the producer decided what to do
+    about it &mdash; not that the request failed, and not that the origin
+    returned nothing. A capture that could not reach an origin
+    <em class="rfc2119">MUST NOT</em> report it this way.
+  </p>
+  <p>
+    A policy that keeps the exchange but not its body produces no record of this
+    kind. The <code>request</code> and <code>response</code> records are written
+    as usual, and the absent body is reported by a <a>record of a body not
+    kept</a> whose <code>truncated</code> is <code>url-policy</code> &mdash; never
+    as dropped at a size limit.
+  </p>
+</section>
+
+<section id="records-of-windows-not-opened">
+  <h2>Records of windows not opened</h2>
+  <p>
+    A capture records one page, and the producer does not give the page a new
+    top-level browsing context &mdash; a window or a tab
+    ([[BROWSERHIVE-WACZ-PROFILE]]). For each time the page asked for one, a WARC
+    file of the capture <em class="rfc2119">MUST</em> contain a
+    <code>metadata</code> record, hereafter a <dfn>record of a window not
+    opened</dfn>. Its <code>WARC-Target-URI</code>
+    <em class="rfc2119">MUST</em> be the URL the window would have loaded, as the
+    browser reported it: <code>about:blank</code> when the page named none, and
+    the action URL, without the submitted body, when a form asked. Its
+    <code>application/warc-fields</code> body <em class="rfc2119">MUST</em>
+    contain:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>window</code></td><td>yes</td>
+          <td><code>not-opened</code>. This version defines no other value.</td></tr>
+      <tr><td><code>windowName</code></td><td>no</td>
+          <td>The name the page gave the window; <code>_blank</code> when it gave
+          none. Absent when the page asked through a navigation that names no
+          window, such as a click carrying a modifier key.</td></tr>
+      <tr><td><code>target</code></td><td>no</td>
+          <td>What asked: <code>page</code>, or <code>iframe</code> (a frame the
+          browser runs apart from the page, typically one from another site).
+          Absent when the capture does not say.</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://shop.example/campaign?from=top
+WARC-Date: 2026-10-01T02:14:31.882Z
+Content-Type: application/warc-fields
+Content-Length: 54
+
+window: not-opened
+windowName: _blank
+target: page</pre>
+  <p>
+    No request was sent for the window's document, so nothing left the capturing
+    machine for that URL. The record is written whether or not a URL policy of
+    the producer matches the URL, and it carries no <code>action</code>: it is
+    not a <a>record of a withheld request</a>, and a reader
+    <em class="rfc2119">MUST NOT</em> count it as one.
+  </p>
+</section>
+
+<section id="security-and-privacy-considerations" class="informative">
+  <h2>Security and privacy considerations</h2>
+  <p>
+    A WARC file holds what crossed the wire. Its <code>request</code> records
+    hold the header fields the browser sent, which may include cookies and
+    credentials, and its <code>response</code> records hold what the origins
+    returned, including any personal data in it.
+  </p>
+  <p>
+    A <a>record of a withheld request</a> holds the URL of a request that was
+    never sent, and a <a>record of a window not opened</a> holds the URL of a
+    document that was never loaded. Both URLs may carry identifiers in their
+    query strings. Withholding a request keeps it from the origin; it does not
+    keep its URL out of the file.
+  </p>
+  <p>
+    Whoever passes a file on passes all of this on. This specification does not
+    ask the producer to remove any of it. What a capture keeps out of its
+    records is decided by the policies of the capture, which the package that
+    holds the file records ([[BROWSERHIVE-WACZ-PROFILE]]).
   </p>
 </section>
 

@@ -64,23 +64,410 @@
   <p>
     本仕様は [[WARC]] のプロファイルです。BrowserHive が WARC ファイルにどのレコードを書き、
     それぞれが何を持つかを定めます。ファイルだけを手にした読み手が、その取り込みが何を記録し、
-    何を残さなかったかを判断できるようにするためです。
+    何を残さず、それがなぜかを判断できるようにするためです。
   </p>
 </section>
 
 <section id="sotd">
   <p>
-    この版は書いている途中です。どこからも参照される前に、節を足します。
+    これは作業中の草案です。BrowserHive が現在書き出しているものを記述しています。同プロジェクト
+    以外での位置づけを持たず、[[WARC]] の発行者から承認されたものでもありません。
+  </p>
+  <p class="note" title="この決まりはどこから来たか">
+    BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
+    までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
+    名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.16.0 は、
+    パッケージの WARC ファイルがこの版に適合することを求めます。
+  </p>
+  <p class="note" title="WARC-Profile の欄とは別のもの">
+    [[WARC]] は <code>WARC-Profile</code> というヘッダの欄を定めており、それは
+    <code>revisit</code> レコードの読み方を述べます。本仕様は、その欄とは関係がありません。
+  </p>
+</section>
+
+<section id="introduction" class="informative">
+  <h2>Introduction</h2>
+  <p>
+    [[WARC]] は、レコードの枠の作り方と、レコードが持つヘッダの欄を定めます。payload に何を
+    入れるか、残さなかった本文や送らなかったリクエストについてどのレコードを書くか、そしてその
+    理由をどう述べるかは、書き手に委ねています。BrowserHive の WARC ファイルの読み手にはその答えが
+    要り、それはファイルを書いている間にしか知りえません。
+  </p>
+  <p>
+    本プロファイルはそれを定めます。[[WARC]] の述べることは何も変えません。本プロファイルが足す
+    レコードは <code>metadata</code> レコードで、本プロファイルを知らない読み手は読み飛ばせます。
+  </p>
+  <p>
+    BrowserHive は WARC ファイルを WACZ パッケージに書き込み、パッケージの決まりは
+    [[BROWSERHIVE-WACZ-PROFILE]] にあります。ここで定めるのは 1 本の WARC ファイルが持つ
+    ものだけです。パッケージから取り出したファイルにも、そのまま当てはまるようにするためです。
   </p>
 </section>
 
 <section>
   <h2>Conformance</h2>
   <p>
+    本仕様の適合対象は WARC ファイル、すなわちファイル 1 つです。適合はファイルの性質であって、
+    それを書くソフトウェアの性質ではありません。
+  </p>
+  <p>
+    適合するファイルは、適合する [[WARC]] ファイルです。本仕様は要求を<em>追加</em>します。
+    取り除くことも、緩めることもしません。
+  </p>
+  <p>
     本仕様における <em class="rfc2119">MUST</em>（〜しなければならない）、
     <em class="rfc2119">MUST NOT</em>（〜してはならない）、
     <em class="rfc2119">SHOULD</em>（〜すべきである）、
     <em class="rfc2119">MAY</em>（〜してもよい）は、[[RFC2119]] の記述どおりに解釈します。
+  </p>
+  <p>
+    <dfn>producer</dfn> は、ファイルを書くソフトウェアです。<dfn>取り込み</dfn>は、1 つの
+    ページに対する producer の 1 回の実行です。1 つの取り込みは、1 本以上の WARC ファイルを
+    書きます。
+  </p>
+</section>
+
+<section id="warcinfo">
+  <h2>The <code>warcinfo</code> record</h2>
+  <p>
+    各 WARC ファイルは、<code>WARC-Filename</code> がそのファイル自身の名前である
+    <code>warcinfo</code> レコードで始まらなければなりません（<em class="rfc2119">MUST</em>）。
+    その <code>application/warc-fields</code> の本文は、下の表で必須とした欄を含まなければ
+    なりません（<em class="rfc2119">MUST</em>）。
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>conformsTo</code></td><td>はい</td>
+          <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/</code>。この欄は
+          ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
+      <tr><td><code>format</code></td><td>はい</td>
+          <td><code>WARC File Format 1.1</code>。</td></tr>
+      <tr><td><code>software</code></td><td>はい</td>
+          <td>producer とその版。</td></tr>
+      <tr><td><code>robots-policy</code></td><td>いいえ</td>
+          <td><code>ignore</code>: producer は <code>robots.txt</code> を見ません。ページを
+          そもそも取り込むかどうかは、取り込みを求める側が決めることです。</td></tr>
+      <tr><td><code>description</code></td><td>いいえ</td>
+          <td>何を取り込んだかを述べる自由な文。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: warcinfo
+WARC-Record-ID: &lt;urn:uuid:0b7e8a52-6a63-4f0e-9d0b-6f1c2a3e4d5f&gt;
+WARC-Date: 2026-11-01T02:14:31.882Z
+WARC-Filename: data-000.warc.gz
+Content-Type: application/warc-fields
+Content-Length: 203
+
+software: browserhive/22.1.0
+format: WARC File Format 1.1
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/
+robots-policy: ignore
+description: Capture of https://shop.example/</pre>
+  <p>
+    <code>conformsTo</code> が名指すのは本プロファイルで、[[WARC]] ではありません。基底の形式は
+    <code>format</code> が名指し、適合するファイルはどれも WARC 1.1 のファイルです
+    （Conformance を参照）。名乗りが 1 つなら、読み手はどちらを取るか迷いません。読み手は、
+    <code>conformsTo</code> 以外の何かから、本仕様のある版への適合を推し量ってはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+  </p>
+</section>
+
+<section id="files">
+  <h2>Records and files</h2>
+  <p>
+    1 つのレコードが 2 つのファイルにまたがってはなりません（<em class="rfc2119">MUST NOT</em>）。
+    レコードは 1 つのファイルに丸ごと書かれ、producer は <code>continuation</code> レコードを
+    書きません。1 つの<a>交信</a>のレコードは、同じファイルに在らなければなりません
+    （<em class="rfc2119">MUST</em>）。
+  </p>
+  <p class="note">
+    1 つの取り込みが、2 本以上のファイルを書くことがあります。それらのファイルの名前と、
+    producer がいつ新しいファイルを始めるかは、ファイルを収めるパッケージの決まりで、1 本の
+    ファイルの決まりではありません。[[BROWSERHIVE-WACZ-PROFILE]] を参照してください。
+  </p>
+</section>
+
+<section id="exchanges">
+  <h2>Exchanges</h2>
+  <p>
+    <dfn data-lt="exchange">交信</dfn>は、ブラウザが送った 1 つのリクエストと、それに対して受け取った
+    レスポンスです。producer は交信を <code>request</code> レコードと <code>response</code>
+    レコードで記録し、レスポンスを本文なしで記録したときは、さらに
+    <a>body not kept のレコード</a>を書きます。<code>request</code> レコードと
+    <code>response</code> レコードは、<code>WARC-Concurrent-To</code> で互いを名指さなければ
+    なりません（<em class="rfc2119">MUST</em>）。
+  </p>
+  <p>
+    1 つの交信のレコードは、同じ <code>WARC-Date</code> を持たなければなりません
+    （<em class="rfc2119">MUST</em>）。その値は、ブラウザがリクエストを始めた時刻で、ブラウザが
+    知らせたとおりのものです。redirect するレスポンスは、その交信を終えます。redirect の後に
+    続くリクエストは、自分の時刻を持つ別の交信を始めます。
+  </p>
+  <p>
+    <code>response</code> レコードの payload は、交信を運んだプロトコルの版に関わらず、
+    HTTP/1.1 の形 [[RFC9112]]（ステータス行、ヘッダの欄、本文の順）でなければなりません
+    （<em class="rfc2119">MUST</em>）。
+  </p>
+  <p class="note" title="なぜ交信全体で 1 つの時刻なのか">
+    [[WARC]] は、レコードの日時をその取り込みが始まった瞬間とし、1 つの取り込みの出来事の
+    レコードに 1 つの日時を共有させます。交信にとってその瞬間は、ブラウザがリクエストを
+    始めたときです。producer がレコードを組み立てる時刻は、本文が届くのにかかった時間だけ
+    遅れ（大きな本文なら数分になります）、ページを取りに行った時刻ではなく producer が書いた
+    時刻を述べてしまいます。
+  </p>
+  <p class="note" title="なぜ HTTP/1.1 なのか">
+    既存の WARC の読み手は、<code>response</code> レコードの payload を HTTP/1.1 として
+    読みます。そのため HTTP/2 や HTTP/3 で運ばれた交信も HTTP/1.1 の形で書き、運んだ
+    プロトコルの版は payload に残りません。
+  </p>
+</section>
+
+<section id="payloads">
+  <h2>Payloads</h2>
+  <p>
+    ブラウザは文字の本文を、ほかの誰かが見る前に文字へ読み替え、道具には文字として渡します。
+    それをバイト列に書き戻すと、書き手が選んだ符号の本文になります —— 両者がたまたま一致
+    しない限り、オリジンが送った符号ではありません。この節の要件は、各レコードの payload を
+    wire を渡ったバイト列に留め、payload digest がオリジンとブラウザの送ったものを保証する
+    ようにします。
+  </p>
+
+  <section id="response-payloads">
+    <h3>Response payloads</h3>
+    <p>
+      本文を持つ <code>response</code> レコードの payload は、サーバが送ったバイト列から
+      <code>Content-Encoding</code> が名指す content-coding を外し、ほかは何も変えないもので
+      なければなりません（<em class="rfc2119">MUST</em>）。とくに producer は、文字の本文を
+      ある文字符号から別の文字符号に変換してはなりません（<em class="rfc2119">MUST NOT</em>）。
+      Shift_JIS で送られた本文はその Shift_JIS のバイト列のまま、media type が charset を
+      宣言しない本文は、ブラウザがどの charset で読んだかに関わらず、送られたとおりに保存します。
+    </p>
+    <p>
+      <code>data:</code> URL はどのサーバも送りません。その payload は URL が運ぶデータを、URL の
+      定めるとおり（base64、または percent-encoding をバイトとして）復号したもので、やはり変換
+      しません。
+    </p>
+    <p>
+      本文をバイト列として得られない producer は、文字から組み直した本文を保存しては
+      なりません（<em class="rfc2119">MUST NOT</em>）。そのレスポンスは、空の payload と、
+      <code>truncated</code> が <code>not-intercepted</code> の
+      <a>body not kept のレコード</a>で記録します。
+    </p>
+  </section>
+
+  <section id="request-payloads">
+    <h3>Request payloads</h3>
+    <p>
+      本文を持つ <code>request</code> レコードの payload は、ブラウザがリクエストの本文として
+      送ったバイト列でなければなりません（<em class="rfc2119">MUST</em>）。それをバイト列として
+      得られない producer は、文字から組み直した本文を保存してはなりません
+      （<em class="rfc2119">MUST NOT</em>）。そのリクエストは本文なしで記録します。
+    </p>
+  </section>
+</section>
+
+<section id="records-of-bodies-not-kept">
+  <h2>Records of bodies not kept</h2>
+  <p>
+    サーバが送った本文を持たずに記録したレスポンスのそれぞれについて —— 送る本文を持たない
+    レスポンス（<code>HEAD</code> リクエストへのもの、ステータス <code>1xx</code>・<code>204</code>・
+    <code>3xx</code>・<code>304</code>）を除いて —— <code>response</code> レコードを持つ
+    ファイルは、<code>metadata</code> レコード —— 以下
+    <dfn data-lt="record of a body not kept">body not kept のレコード</dfn> —— も持たなければ
+    なりません（<em class="rfc2119">MUST</em>）。その <code>WARC-Target-URI</code> は
+    レスポンスの URL で、<code>WARC-Refers-To</code> は <code>response</code> レコードの
+    <code>WARC-Record-ID</code> でなければならず（<em class="rfc2119">MUST</em>）、
+    <code>application/warc-fields</code> の本文は次を含まなければなりません
+    （<em class="rfc2119">MUST</em>）:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>truncated</code></td><td>はい</td>
+          <td>レコードが本文を持たない理由。下の値のどれか。</td></tr>
+      <tr><td><code>encodedDataLength</code></td><td>いいえ</td>
+          <td>レスポンス全体が wire を渡ったときの大きさ（バイト）。producer が知っている
+          場合に。</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><code>too-large</code> —— 本文が、producer が 1 つの本文に置いた上限より大きかった。</li>
+    <li><code>task-cap</code> —— 本文を残すと、取り込みが残した本文が、producer がその全体に
+        置いた上限を超えるところだった。</li>
+    <li><code>url-policy</code> —— producer の URL の方針が、交信を本文なしで残すよう求めた。</li>
+    <li><code>content-type</code> —— producer の media type の方針が、レスポンスの media type
+        の本文を残さないよう求めた。</li>
+    <li><code>not-intercepted</code> —— 本文は wire を渡ったが、producer がバイト列として
+        得られなかった（<a href="#response-payloads"></a> を参照）。</li>
+  </ul>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://example.com/api/feed
+WARC-Date: 2026-10-30T02:14:31.882Z
+WARC-Refers-To: &lt;urn:uuid:5c1f0b8e-2a77-4a5e-9d3e-0f6f3b1d2c4a&gt;
+Content-Type: application/warc-fields
+Content-Length: 53
+
+truncated: not-intercepted
+encodedDataLength: 4821</pre>
+  <p>
+    サイズの上限で落とした本文（<code>too-large</code> と <code>task-cap</code>）の
+    <code>response</code> レコードは <code>WARC-Truncated: length</code> を持ち
+    （<em class="rfc2119">MUST</em>）、取り込めなかった本文のものは
+    <code>WARC-Truncated: unspecified</code> を持たなければなりません
+    （<em class="rfc2119">MUST</em>）。WARC ファイルだけを読む読み手が、空の payload を本文と
+    取り違えないようにするためです。
+  </p>
+  <p class="note">
+    方針で省いた本文は途中で切ったものではないので、その <code>response</code> レコードは
+    <code>WARC-Truncated</code> を持ちません。どの上限と方針が効いていたかは、WARC ファイルの
+    外、ファイルを収めるパッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+</section>
+
+<section id="records-of-withheld-requests">
+  <h2>Records of withheld requests</h2>
+  <p>
+    producer が方針によって差し止めたリクエストのそれぞれについて、取り込みの WARC ファイルは
+    <code>metadata</code> レコード —— 以下
+    <dfn data-lt="record of a withheld request">withheld request のレコード</dfn> —— を
+    含まなければなりません（<em class="rfc2119">MUST</em>）。その
+    <code>WARC-Target-URI</code> はリクエストの URL でなければならず
+    （<em class="rfc2119">MUST</em>）、<code>application/warc-fields</code> の本文は次を
+    含まなければなりません（<em class="rfc2119">MUST</em>）:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>action</code></td><td>はい</td>
+          <td>producer が何をしたか。<code>deny</code>: リクエストを送らなかった。その URL に
+          ついて、取り込みを行う機械から出たものはありません。<code>no-archive</code>:
+          リクエストを通し、オリジンは答えたが、この記録のほかには交信の何も残さなかった。
+          リクエストが送られたかどうかを述べるのはこの欄です。</td></tr>
+      <tr><td><code>pattern</code></td><td>はい</td>
+          <td>一致したパターン。producer の方針の綴りのとおりで、読み手がそちらで引き当て
+          られるように。</td></tr>
+      <tr><td><code>method</code></td><td>はい</td>
+          <td>リクエストのメソッド。</td></tr>
+      <tr><td><code>resourceType</code></td><td>いいえ</td>
+          <td>ページが何を取りに行っていたか。取り込みが知っている場合に。</td></tr>
+      <tr><td><code>target</code></td><td>いいえ</td>
+          <td>何がリクエストを出したか: <code>page</code>、<code>iframe</code>（browser が
+          ページと別に走らせるフレーム。多くは別サイトのもの）、<code>worker</code>、
+          <code>service_worker</code>。取り込みが述べないときは置きません。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://www.example-analytics.com/collect?v=2
+WARC-Date: 2026-09-06T02:14:31.882Z
+Content-Type: application/warc-fields
+Content-Length: 87
+
+action: deny
+pattern: *://*.example-analytics.com/*
+method: POST
+resourceType: XHR</pre>
+  <p>
+    <code>deny</code> は取り込みが起こすすべてのリクエストに届くので、そのレコードは、ページの
+    どの部分がリクエストを出したかに関わらず書かなければなりません
+    （<em class="rfc2119">MUST</em>）。producer がほかには記録しない部分のリクエストも含みます。
+  </p>
+  <p>
+    withheld request のレコードはレスポンスも本文も持ちません。主張しているのは、ページがその
+    URL を要求したこと、そして producer がそれについて何をするか決めたこと —— リクエストが
+    失敗したという意味でも、オリジンが何も返さなかったという意味でもありません。オリジンに
+    到達できなかった取り込みは、これをこの形で報告してはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+  </p>
+  <p>
+    交信を残して本文だけを残さない方針は、この種のレコードを生みません。<code>request</code> と
+    <code>response</code> のレコードは通常どおり書かれ、欠けている本文は、<code>truncated</code>
+    が <code>url-policy</code> の <a>body not kept のレコード</a>で報告されます —— 上限で
+    落としたものとしては報告されません。
+  </p>
+</section>
+
+<section id="records-of-windows-not-opened">
+  <h2>Records of windows not opened</h2>
+  <p>
+    取り込みは 1 つのページを記録し、producer はページに新しい top-level browsing context ——
+    ウィンドウやタブ —— を与えません（[[BROWSERHIVE-WACZ-PROFILE]]）。ページがそれを求めた
+    1 回ごとに、取り込みの WARC ファイルは <code>metadata</code> レコード —— 以下
+    <dfn data-lt="record of a window not opened">window not opened のレコード</dfn> —— を
+    含まなければなりません（<em class="rfc2119">MUST</em>）。その
+    <code>WARC-Target-URI</code> は、そのウィンドウが読み込むはずだった URL を browser が
+    知らせたとおりのものでなければなりません（<em class="rfc2119">MUST</em>）: ページが名指し
+    しなければ <code>about:blank</code>、form が求めたなら送る本文を除いた action の URL です。
+    <code>application/warc-fields</code> の本文は次を含まなければなりません
+    （<em class="rfc2119">MUST</em>）:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>window</code></td><td>はい</td>
+          <td><code>not-opened</code>。この版は、ほかの値を定めません。</td></tr>
+      <tr><td><code>windowName</code></td><td>いいえ</td>
+          <td>ページがウィンドウに付けた名前。付けなければ <code>_blank</code>。ウィンドウを
+          名指ししない遷移（修飾キーつきの click など）で求めたときは置きません。</td></tr>
+      <tr><td><code>target</code></td><td>いいえ</td>
+          <td>何が求めたか: <code>page</code>、または <code>iframe</code>（browser がページと
+          別に走らせるフレーム。多くは別サイトのもの）。取り込みが述べないときは置きません。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://shop.example/campaign?from=top
+WARC-Date: 2026-10-01T02:14:31.882Z
+Content-Type: application/warc-fields
+Content-Length: 54
+
+window: not-opened
+windowName: _blank
+target: page</pre>
+  <p>
+    ウィンドウの文書のリクエストは送られていないので、その URL について、取り込みを行う機械から
+    出たものはありません。このレコードは、producer の URL の方針が URL に当たるかどうかに
+    関わらず書き、<code>action</code> を持ちません。これは
+    <a>withheld request のレコード</a>ではなく、読み手はそれとして数えてはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+  </p>
+</section>
+
+<section id="security-and-privacy-considerations" class="informative">
+  <h2>Security and privacy considerations</h2>
+  <p>
+    WARC ファイルは wire を渡ったものを持ちます。<code>request</code> レコードはブラウザが
+    送ったヘッダの欄を持ち、そこには cookie や認証の情報が含まれることがあります。
+    <code>response</code> レコードはオリジンが返したものを、その中の個人の情報も含めて
+    持ちます。
+  </p>
+  <p>
+    <a>withheld request のレコード</a>は一度も送られなかったリクエストの URL を、
+    <a>window not opened のレコード</a>は一度も読み込まれなかった文書の URL を持ちます。
+    どちらの URL も、クエリ文字列に識別子を運んでいることがあります。リクエストを差し止めると
+    オリジンには届きませんが、その URL はファイルに残ります。
+  </p>
+  <p>
+    ファイルを人に渡す者は、これらをすべて渡します。本仕様は producer にそのどれかを取り除く
+    ことを求めません。取り込みが何をレコードに残さないかは取り込みの方針が決め、方針は
+    ファイルを収めるパッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
   </p>
 </section>
 
