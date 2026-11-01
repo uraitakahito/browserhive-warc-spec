@@ -1,0 +1,163 @@
+name: respec-drift
+
+# 同梱した ReSpec が上流から離れていないかを見る。
+#
+# ビルドの w3.org 依存を切った代わりに、こちらは w3.org が更新しても動かなく
+# なった。それは意図した通りだが、放っておくと誰も上げない。ここがその穴を塞ぐ。
+#
+# 落ちる条件を狭くしてあるのは意図的。w3.org が不調でも赤くしない ── そこを
+# 赤にすると、ビルドから追い出したはずの依存を定期実行に招き入れるだけになる。
+# 「差分があった」と「確かめられなかった」は別の結果として扱う。
+on:
+  schedule:
+    # 週 1 回。ReSpec の更新はこれより遅いので、これ以上速くしても雑音が増える。
+    # 定期実行は既定ブランチの workflow しか動かないため、ブランチでの確認は
+    # workflow_dispatch で行う。
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  UPSTREAM_URL: https://www.w3.org/Tools/respec/respec-w3c
+  VENDORED: assets/js/respec-w3c.js
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: compare
+        name: Compare the vendored bundle against upstream
+        run: |
+          # 取得できなければ、そこで静かに終える。差分の有無は不明なままでよい。
+          if ! curl -fsSL --max-time 60 --retry 2 "$UPSTREAM_URL" -o /tmp/upstream.js; then
+            echo "::notice::w3.org から取得できなかった。今回は判定しない"
+            echo "state=unknown" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 版ではなくハッシュで比べる。上流が同じ版を作り直すことがあり、
+          # そのときも中身は変わっているので追随したほうがよい。版だけ見ると
+          # それを取りこぼす。版は報告に使うだけ。
+          MINE=$(shasum -a 256 "$VENDORED" | cut -d' ' -f1)
+          THEIRS=$(shasum -a 256 /tmp/upstream.js | cut -d' ' -f1)
+          V_MINE=$(grep -oE 'respecVersion="[0-9.]+"' "$VENDORED" | grep -oE '[0-9.]+' | head -1)
+          V_THEIRS=$(grep -oE 'respecVersion="[0-9.]+"' /tmp/upstream.js | grep -oE '[0-9.]+' | head -1)
+
+          {
+            echo "mine=${V_MINE:-unknown}"
+            echo "theirs=${V_THEIRS:-unknown}"
+            echo "mine_sha=${MINE:0:16}"
+            echo "theirs_sha=${THEIRS:0:16}"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$MINE" = "$THEIRS" ]; then
+            echo "追随できている (v${V_MINE:-?}, ${MINE:0:16})"
+            echo "state=same" >> "$GITHUB_OUTPUT"
+          else
+            echo "上流が変わっている: v${V_MINE:-?} (${MINE:0:16}) → v${V_THEIRS:-?} (${THEIRS:0:16})"
+            echo "state=differs" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ここから先は差分があったときだけ。知りたいのは「新しい版が出た」ではなく
+      # 「上げても仕様書がビルドできるか」なので、報せる前に実際に試す。
+      - if: steps.compare.outputs.state == 'differs'
+        name: Swap in the upstream bundle
+        run: cp /tmp/upstream.js "$VENDORED"
+
+      # 3 回まで試す。ReSpec のビルドは一定の割合で偶発的に落ちるので、1 回の
+      # 結果で判定すると「上げると落ちます」という最も重い誤報を出す。実際に
+      # この検査を入れた初日に、正常な上流版に対してそれが起きた。
+      #
+      # 偶発と本物の非互換は、エラーからは見分けられない ── どちらも中身の無い
+      # `Error:` になる。区別できるのは「何度やっても落ちるか」だけなので、
+      # 繰り返す以外に方法がない。
+      - if: steps.compare.outputs.state == 'differs'
+        id: trial1
+        name: Try building with the upstream bundle (1/3)
+        continue-on-error: true
+        uses: w3c/spec-prod@v2
+        with:
+          TOOLCHAIN: respec
+          SOURCE: 1.0.0/index.html
+          # GH_PAGES_BRANCH を渡さない = 配置しない。ビルドの成否だけを見る。
+          VALIDATE_LINKS: false
+      - if: steps.compare.outputs.state == 'differs' && steps.trial1.outcome == 'failure'
+        id: trial2
+        name: Try building with the upstream bundle (2/3)
+        continue-on-error: true
+        uses: w3c/spec-prod@v2
+        with:
+          TOOLCHAIN: respec
+          SOURCE: 1.0.0/index.html
+          # GH_PAGES_BRANCH を渡さない = 配置しない。ビルドの成否だけを見る。
+          VALIDATE_LINKS: false
+      - if: steps.compare.outputs.state == 'differs' && steps.trial1.outcome == 'failure' && steps.trial2.outcome == 'failure'
+        id: trial3
+        name: Try building with the upstream bundle (3/3)
+        continue-on-error: true
+        uses: w3c/spec-prod@v2
+        with:
+          TOOLCHAIN: respec
+          SOURCE: 1.0.0/index.html
+          # GH_PAGES_BRANCH を渡さない = 配置しない。ビルドの成否だけを見る。
+          VALIDATE_LINKS: false
+
+      - if: steps.compare.outputs.state == 'differs'
+        name: Open or update the drift issue
+        uses: actions/github-script@v7
+        env:
+          TRIAL: ${{ steps.trial1.outcome }}${{ steps.trial2.outcome }}${{ steps.trial3.outcome }}
+        with:
+          script: |
+            // 週 1 回なので、放置すると同じ issue が積み上がる。label で既存を
+            // 探し、あれば本文を差し替える。
+            const label = 'respec-drift';
+            // 3 回のうち 1 度でも通れば「上げて安全」。連結した文字列に
+            // success が含まれるかで見る。
+            const ok = (process.env.TRIAL || '').includes('success');
+            const o = ${{ toJSON(steps.compare.outputs) }};
+
+            const verdict = ok
+              ? '**上げて安全です。** 上流の版で仕様書のビルドが通りました。'
+              : '**上げるとビルドが落ちます。** 上流の版で 3 回試して 3 回とも失敗しました。'
+                + '固定していなければ、この版が出た時点から deploy が落ちていたことになります。';
+
+            const body = [
+              `| | 版 | sha256 (先頭 16) |`,
+              `| --- | --- | --- |`,
+              `| 同梱 | \`${o.mine}\` | \`${o.mine_sha}\` |`,
+              `| 上流 | \`${o.theirs}\` | \`${o.theirs_sha}\` |`,
+              ``,
+              verdict,
+              ``,
+              `更新するには:`,
+              ``,
+              '```sh',
+              `curl -sL https://www.w3.org/Tools/respec/respec-w3c \\`,
+              `  -o assets/js/respec-w3c.js`,
+              '```',
+              ``,
+              `<sub>respec-drift が自動で更新しています。差分が解消すれば手で閉じてください。</sub>`,
+            ].join('\n');
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              ...context.repo, state: 'open', labels: label,
+            });
+            if (open.length) {
+              await github.rest.issues.update({
+                ...context.repo, issue_number: open[0].number, body,
+              });
+              core.notice(`既存の issue #${open[0].number} を更新した`);
+            } else {
+              const { data: created } = await github.rest.issues.create({
+                ...context.repo,
+                title: `同梱の ReSpec が上流から離れています (v${o.mine} → v${o.theirs})`,
+                body, labels: [label],
+              });
+              core.notice(`issue #${created.number} を立てた`);
+            }
