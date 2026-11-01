@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.0.0</title>
+<title>BrowserHive WARC Profile 1.1.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -76,7 +76,7 @@
     the WARC records BrowserHive writes. They moved here so that a WARC file can
     name the rules it follows by itself (see <a href="#warcinfo"></a>), and so
     that a file read apart from its package still means what it says.
-    BrowserHive WACZ Profile 1.16.0 requires the WARC files of a package to
+    BrowserHive WACZ Profile 1.17.0 requires the WARC files of a package to
     conform to this version.
   </p>
   <p class="note" title="Not the WARC-Profile field">
@@ -96,9 +96,13 @@
     only while the file is being written.
   </p>
   <p>
-    This profile fixes them. It changes nothing [[WARC]] says: the records it
-    adds are <code>metadata</code> records, which a reader unaware of this
-    profile can pass over.
+    This profile fixes them. It changes nothing [[WARC]] says. Most of the
+    records it adds are <code>metadata</code> records, which a reader unaware
+    of this profile can pass over. A <a>snapshot</a> is recorded in a
+    <code>resource</code> record as well, under a URI of its own, and that
+    record is meant for such a reader: one that serves archived pages lists it
+    and serves it like a page it holds, showing the page as it stood when the
+    snapshot was taken.
   </p>
   <p>
     BrowserHive writes its WARC files into a WACZ package, whose rules are in
@@ -146,7 +150,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -169,9 +173,9 @@ WARC-Filename: data-000.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/22.1.0
+software: browserhive/23.0.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -190,7 +194,8 @@ description: Capture of https://shop.example/</pre>
     A record <em class="rfc2119">MUST NOT</em> span two files: a record is
     written whole into one file, and the producer writes no
     <code>continuation</code> records. The records of one <a>exchange</a>
-    <em class="rfc2119">MUST</em> be in the same file.
+    <em class="rfc2119">MUST</em> be in the same file, and so
+    <em class="rfc2119">MUST</em> the two records of one <a>snapshot</a>.
   </p>
   <p class="note">
     A capture may write more than one file. How those files are named, and when
@@ -476,6 +481,256 @@ target: page</pre>
   </p>
 </section>
 
+<section id="snapshots">
+  <h2>Snapshots</h2>
+  <p>
+    A <dfn>snapshot</dfn> is a copy of the document in the page's main frame as
+    it stood at one moment of the capture. The producer makes it from the
+    document as the browser then holds it, with whatever scripts had changed in
+    it, and not from anything a server sent. Each snapshot is taken at one of
+    these stages:
+  </p>
+  <ul>
+    <li><code>after-load</code> &mdash; the page has loaded and settled, and no
+        <a>behavior</a> has run on it.</li>
+    <li><code>after-behaviors</code> &mdash; the behaviors the capture ran on
+        the page have finished.</li>
+  </ul>
+  <p>
+    A <dfn>behavior</dfn> is code that a capture runs on the page besides the
+    page's own, for instance to fill in a search form and send it. A capture
+    takes at most one snapshot at each stage, and none at
+    <code>after-behaviors</code> unless it ran a behavior. The code of the
+    behaviors, which stages a capture took, and why it took none at a stage
+    are recorded by the package that holds the file
+    ([[BROWSERHIVE-WACZ-PROFILE]]).
+  </p>
+  <p>
+    The producer records a snapshot as two records, written together: a
+    <code>resource</code> record that holds the copy, and a
+    <code>metadata</code> record that says what the copy is. The two records
+    <em class="rfc2119">MUST NOT</em> carry <code>WARC-Concurrent-To</code>. A
+    snapshot is not part of an <a>exchange</a>, and [[WARC]] gives the records
+    that field links one date, which a snapshot does not share with the
+    exchange that loaded its document.
+  </p>
+
+  <section id="snapshot-resource-records">
+    <h3>The <code>resource</code> record</h3>
+    <p>
+      The <code>resource</code> record of a snapshot holds the copy as its
+      block, and <em class="rfc2119">MUST</em> carry these header fields:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>WARC-Target-URI</code></td><td>yes</td>
+            <td><code>urn:browserhive:snapshot:</code>, then the stage, a
+            colon, and the URL of the document at the moment of the snapshot
+            without its fragment: for instance
+            <code>urn:browserhive:snapshot:after-load:https://shop.example/</code>.
+            A page can change the URL of its document through the History API
+            without loading another document, so the URL need not be the one
+            the document was loaded from.</td></tr>
+        <tr><td><code>WARC-Date</code></td><td>yes</td>
+            <td>The moment the producer took the snapshot.</td></tr>
+        <tr><td><code>Content-Type</code></td><td>yes</td>
+            <td><code>text/html; charset=utf-8</code>.</td></tr>
+        <tr><td><code>WARC-Block-Digest</code></td><td>yes</td>
+            <td>The digest of the block.</td></tr>
+        <tr><td><code>WARC-Payload-Digest</code></td><td>yes</td>
+            <td>The digest of the payload. For a <code>resource</code> record
+            the payload is the block [[WARC]], so this digest is computed over
+            the same bytes.</td></tr>
+      </tbody>
+    </table>
+    <pre class="text">
+WARC/1.1
+WARC-Type: resource
+WARC-Record-ID: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
+WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.415Z
+Content-Type: text/html; charset=utf-8
+WARC-Block-Digest: sha256:RK4XPNMRVNTPF7OWYGYRXMHDFC5H2RF7BH74Y2KKIRRELLG6MZJQ
+WARC-Payload-Digest: sha256:RK4XPNMRVNTPF7OWYGYRXMHDFC5H2RF7BH74Y2KKIRRELLG6MZJQ
+Content-Length: 237
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;&lt;head&gt;&lt;base href="https://shop.example/results"&gt;
+&lt;meta charset="utf-8"&gt;&lt;title&gt;Results for lamp&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;form role="search"&gt;&lt;input name="q" value="lamp"&gt;&lt;/form&gt;
+&lt;h1&gt;3 results&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;</pre>
+    <p>
+      Here a behavior searched the page for <q>lamp</q>. The page showed the
+      results and changed its URL from <code>https://shop.example/</code>
+      without loading another document. What the behavior typed into the
+      search field is in the copy, as the field's <code>value</code>
+      attribute, and the <code>base</code> element that opens the head is the
+      producer's (see <a href="#snapshot-content"></a>).
+    </p>
+    <p class="note" title="Why a URI of its own">
+      [[WARC]] keeps an <code>http</code> or <code>https</code> target URI of a
+      <code>resource</code> record for what was returned for that URI, and
+      offers a synthesized target URI for other artefacts of a harvest. A
+      snapshot is such an artefact. Under a URI of its own, no reader takes it
+      for what a server returned for the document's URL, and a reader that
+      serves archived pages does not confuse it with the response for that
+      URL, whatever their times.
+    </p>
+  </section>
+
+  <section id="snapshot-metadata-records">
+    <h3>The <code>metadata</code> record</h3>
+    <p>
+      The <code>metadata</code> record of a snapshot says what the copy is. Its
+      <code>WARC-Refers-To</code> <em class="rfc2119">MUST</em> be the
+      <code>WARC-Record-ID</code> of the snapshot's <code>resource</code>
+      record, its <code>WARC-Target-URI</code> and <code>WARC-Date</code>
+      <em class="rfc2119">MUST</em> be those of that record, and its
+      <code>application/warc-fields</code> body <em class="rfc2119">MUST</em>
+      contain:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>snapshot</code></td><td>yes</td>
+            <td>The stage at which the producer took the snapshot:
+            <code>after-load</code> or <code>after-behaviors</code>.</td></tr>
+        <tr><td><code>document-uri</code></td><td>yes</td>
+            <td>The URL of the document at the moment of the snapshot, as the
+            browser held it, fragment included.</td></tr>
+        <tr><td><code>document-record</code></td><td>no</td>
+            <td>The <code>WARC-Record-ID</code> of the <code>response</code>
+            record that delivered the document, angle brackets included. That
+            record may be in another file of the capture. Absent when the
+            capture holds no such record.</td></tr>
+        <tr><td><code>secrets-replaced</code></td><td>yes</td>
+            <td>How many times the producer replaced the value of a
+            <a>secret</a> in the copy, in decimal (see
+            <a href="#snapshot-content"></a>). <code>0</code> when it replaced
+            none.</td></tr>
+      </tbody>
+    </table>
+    <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.415Z
+WARC-Refers-To: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
+Content-Type: application/warc-fields
+Content-Length: 158
+
+snapshot: after-behaviors
+document-uri: https://shop.example/results
+document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
+secrets-replaced: 0</pre>
+    <p>
+      In the example, <code>document-uri</code> is the URL the page changed
+      to, and <code>document-record</code> names the <code>response</code>
+      record that delivered the document from
+      <code>https://shop.example/</code>.
+    </p>
+    <p>
+      The body <em class="rfc2119">MUST NOT</em> carry <code>action</code>,
+      <code>truncated</code> or <code>window</code>, and a reader
+      <em class="rfc2119">MUST NOT</em> count the record as a
+      <a>record of a withheld request</a>, a <a>record of a body not kept</a>
+      or a <a>record of a window not opened</a>. The record carries no
+      <code>WARC-Payload-Digest</code>, which [[WARC]] allows only on a record
+      with a well-defined payload.
+    </p>
+  </section>
+
+  <section id="snapshot-content">
+    <h3>What a snapshot holds</h3>
+    <p>
+      The block of a snapshot's <code>resource</code> record is the document
+      serialized as HTML by the producer, encoded in UTF-8. It is the
+      producer's work and not a server's, and a reader
+      <em class="rfc2119">MUST NOT</em> take it for what an origin sent. What
+      the origin sent for the document is in the <code>response</code> record
+      that <code>document-record</code> names.
+    </p>
+    <p>
+      The first element in the head of a snapshot
+      <em class="rfc2119">MUST</em> be a <code>base</code> element whose
+      <code>href</code> attribute is the document base URL at the moment of the
+      snapshot, without its fragment: the URL against which the page resolved
+      relative URLs, which is the URL of the document unless the page set
+      another with a <code>base</code> element of its own. A reader serves the
+      copy under the snapshot's own URI, and this element has the relative URLs
+      in it resolve as they did in the page.
+    </p>
+    <p>
+      A snapshot <em class="rfc2119">MUST NOT</em> contain the page's scripts:
+      it holds no <code>script</code> element of any namespace, no attribute
+      whose name begins with <code>on</code>, no <code>srcdoc</code> attribute,
+      whose document could hold either, and no <code>javascript:</code> URL
+      other than <code>javascript:void(0)</code> in an <code>href</code>,
+      <code>xlink:href</code>, <code>src</code>, <code>action</code>,
+      <code>formaction</code> or <code>data</code> attribute.
+    </p>
+    <p>
+      In a snapshot, an <code>input</code> element whose <code>type</code> is
+      <code>password</code> <em class="rfc2119">MUST NOT</em> carry a
+      <code>value</code> attribute, whatever the field held.
+    </p>
+    <p>
+      A <dfn>secret</dfn> is a value that whoever asked for the capture
+      supplied in confidence, for behaviors to read
+      ([[BROWSERHIVE-WACZ-PROFILE]]). A snapshot
+      <em class="rfc2119">MUST NOT</em> contain the value of a secret, neither
+      as it is nor with its characters escaped as the HTML serialization
+      escapes them (<code>&amp;</code> as <code>&amp;amp;</code>, for
+      instance). The producer replaces each occurrence and counts the
+      replacements in <code>secrets-replaced</code>.
+    </p>
+  </section>
+
+  <section id="making-a-snapshot" class="informative">
+    <h3>Making a snapshot</h3>
+    <p>
+      A producer can meet these requirements, and keep the copy close to what
+      the page showed, as follows:
+    </p>
+    <ul>
+      <li>Read the document from a script context of its own (an isolated
+          world, in Chromium), where the page's scripts cannot change how the
+          document is read.</li>
+      <li>Copy the document and write into the copy what the page holds
+          outside its markup: the current value of each field as its
+          <code>value</code> attribute, or as the content of a
+          <code>textarea</code>; which boxes are checked and which options are
+          selected; each open shadow root as a <code>template</code> element
+          with a <code>shadowrootmode</code> attribute; the style sheets the
+          page adopted, as <code>style</code> elements; and each
+          <code>canvas</code> as an image of what it showed. A canvas whose
+          pixels the page could not read stays empty, and a password field
+          gets no value.</li>
+      <li>Remove <code>script</code> and <code>noscript</code> elements, and
+          <code>link</code> elements that preload scripts
+          (<code>rel="modulepreload"</code>, or <code>rel="preload"</code> with
+          <code>as="script"</code>). Remove event handler attributes and
+          <code>srcdoc</code>, and replace <code>javascript:</code> URLs with
+          <code>javascript:void(0)</code>, which keeps a link looking like a
+          link.</li>
+      <li>Leave each frame's <code>src</code> as it is. The documents of
+          frames are not part of the snapshot, and a reader shows what the
+          capture recorded at those URLs.</li>
+      <li>Keep the document's doctype as it was, or its absence, so that a
+          reader renders the copy in the page's mode.</li>
+      <li>Put the <code>base</code> element first in the head of the copy,
+          with the document base URL the page used.</li>
+      <li>Serialize the copy, then replace each secret in the result, as it is
+          and escaped, with <code>***</code>.</li>
+    </ul>
+  </section>
+</section>
+
 <section id="security-and-privacy-considerations" class="informative">
   <h2>Security and privacy considerations</h2>
   <p>
@@ -492,8 +747,21 @@ target: page</pre>
     keep its URL out of the file.
   </p>
   <p>
-    Whoever passes a file on passes all of this on. This specification does not
-    ask the producer to remove any of it. What a capture keeps out of its
+    A <a>snapshot</a> holds the text of the page as it stood, with what the
+    page's scripts and the capture's <a data-lt="behavior">behaviors</a> had
+    put into its fields: the value of every field but a password field is in
+    the copy. The producer replaces the values of
+    <a data-lt="secret">secrets</a> it finds there, as they are or escaped as
+    HTML escapes them, but it does not find a secret the page had transformed,
+    for instance by encoding it into a URL, nor anything nobody declared a
+    secret. The <code>document-uri</code> of a snapshot keeps the fragment of
+    the document's URL, which is never sent to a server and which some sign-in
+    flows use to hand a token to the page.
+  </p>
+  <p>
+    Whoever passes a file on passes all of this on. Beyond what a snapshot
+    leaves out, this specification does not ask the producer to remove any of
+    it. What a capture keeps out of its
     records is decided by the policies of the capture, which the package that
     holds the file records ([[BROWSERHIVE-WACZ-PROFILE]]).
   </p>

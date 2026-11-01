@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>BrowserHive WARC Profile 1.1.0 (日本語訳)</title>
+<!--
+  英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
+
+  見出しは訳さない。節の id は原稿に書いてあるが、英語版と見出しを揃えておくと、
+  節への参照が言語をまたいでも同じ名前で通る（browserhive-specs と同じ作法）。
+-->
+<script src="../../assets/js/respec-w3c.js" class="remove" defer></script>
+<script class="remove">
+  var respecConfig = {
+    specStatus: "unofficial",
+    shortName: "browserhive-warc-profile-ja",
+    // 指す先は動く `latest/ja/` で、その時点で最新の版の写し。転送ではなく、版を出すたびに
+    // 新しい版で上書きする。
+    latestVersion: "https://uraitakahito.github.io/browserhive-warc-spec/latest/ja/",
+    editors: [{ name: "uraitakahito", url: "https://github.com/uraitakahito" }],
+    github: "uraitakahito/browserhive-warc-spec",
+    // 参照はここで完結させる。SpecRef を引かない —— 外のサービスの可用性で、本文と無関係に
+    // CI が赤くならないように。
+    localBiblio: {
+      WARC: {
+        title: "The WARC Format 1.1",
+        // 正典は ISO 28500:2017。iso.org は linkcheck に 403 を返すので、IIPC の写しを指す。
+        href: "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/",
+        publisher: "IIPC",
+        version: "1.1",
+      },
+      "BROWSERHIVE-WACZ-PROFILE": {
+        title: "BrowserHive WACZ Profile",
+        href: "https://uraitakahito.github.io/browserhive-specs/wacz-profile/latest/ja/",
+        publisher: "BrowserHive",
+      },
+      RFC2119: {
+        title: "Key words for use in RFCs to Indicate Requirement Levels",
+        href: "https://www.rfc-editor.org/rfc/rfc2119",
+        authors: ["S. Bradner"],
+        date: "March 1997",
+        publisher: "IETF",
+      },
+      RFC9112: {
+        title: "HTTP/1.1",
+        href: "https://www.rfc-editor.org/rfc/rfc9112",
+        authors: ["R. Fielding", "M. Nottingham", "J. Reschke"],
+        date: "June 2022",
+        publisher: "IETF",
+      },
+    },
+    lint: false,
+  };
+</script>
+</head>
+<body>
+
+<section id="abstract">
+  <p class="note" title="非公式翻訳 (Unofficial translation)">
+    これは BrowserHive WARC Profile 1.1.0 の日本語訳です。<strong>正典は
+    <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
+    訳と原典が食い違った場合は原典が優先します。
+  </p>
+  <p>
+    本仕様は [[WARC]] のプロファイルです。BrowserHive が WARC ファイルにどのレコードを書き、
+    それぞれが何を持つかを定めます。ファイルだけを手にした読み手が、その取り込みが何を記録し、
+    何を残さず、それがなぜかを判断できるようにするためです。
+  </p>
+</section>
+
+<section id="sotd">
+  <p>
+    これは作業中の草案です。BrowserHive が現在書き出しているものを記述しています。同プロジェクト
+    以外での位置づけを持たず、[[WARC]] の発行者から承認されたものでもありません。
+  </p>
+  <p class="note" title="この決まりはどこから来たか">
+    BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
+    までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
+    名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.17.0 は、
+    パッケージの WARC ファイルがこの版に適合することを求めます。
+  </p>
+  <p class="note" title="WARC-Profile の欄とは別のもの">
+    [[WARC]] は <code>WARC-Profile</code> というヘッダの欄を定めており、それは
+    <code>revisit</code> レコードの読み方を述べます。本仕様は、その欄とは関係がありません。
+  </p>
+</section>
+
+<section id="introduction" class="informative">
+  <h2>Introduction</h2>
+  <p>
+    [[WARC]] は、レコードの枠の作り方と、レコードが持つヘッダの欄を定めます。payload に何を
+    入れるか、残さなかった本文や送らなかったリクエストについてどのレコードを書くか、そしてその
+    理由をどう述べるかは、書き手に委ねています。BrowserHive の WARC ファイルの読み手にはその答えが
+    要り、それはファイルを書いている間にしか知りえません。
+  </p>
+  <p>
+    本プロファイルはそれを定めます。[[WARC]] の述べることは何も変えません。本プロファイルが
+    足すレコードの多くは <code>metadata</code> レコードで、本プロファイルを知らない読み手は
+    読み飛ばせます。<a>写し</a>は、それ自身の URI の下で <code>resource</code> レコードでも
+    記録し、そのレコードはそうした読み手のためのものです: アーカイブしたページを配る読み手は、
+    それを一覧に載せて手持ちのページと同じように配り、写しを取ったときのページの姿を見せます。
+  </p>
+  <p>
+    BrowserHive は WARC ファイルを WACZ パッケージに書き込み、パッケージの決まりは
+    [[BROWSERHIVE-WACZ-PROFILE]] にあります。ここで定めるのは 1 本の WARC ファイルが持つ
+    ものだけです。パッケージから取り出したファイルにも、そのまま当てはまるようにするためです。
+  </p>
+</section>
+
+<section>
+  <h2>Conformance</h2>
+  <p>
+    本仕様の適合対象は WARC ファイル、すなわちファイル 1 つです。適合はファイルの性質であって、
+    それを書くソフトウェアの性質ではありません。
+  </p>
+  <p>
+    適合するファイルは、適合する [[WARC]] ファイルです。本仕様は要求を<em>追加</em>します。
+    取り除くことも、緩めることもしません。
+  </p>
+  <p>
+    本仕様における <em class="rfc2119">MUST</em>（〜しなければならない）、
+    <em class="rfc2119">MUST NOT</em>（〜してはならない）、
+    <em class="rfc2119">SHOULD</em>（〜すべきである）、
+    <em class="rfc2119">MAY</em>（〜してもよい）は、[[RFC2119]] の記述どおりに解釈します。
+  </p>
+  <p>
+    <dfn>producer</dfn> は、ファイルを書くソフトウェアです。<dfn>取り込み</dfn>は、1 つの
+    ページに対する producer の 1 回の実行です。1 つの取り込みは、1 本以上の WARC ファイルを
+    書きます。
+  </p>
+</section>
+
+<section id="warcinfo">
+  <h2>The <code>warcinfo</code> record</h2>
+  <p>
+    各 WARC ファイルは、<code>WARC-Filename</code> がそのファイル自身の名前である
+    <code>warcinfo</code> レコードで始まらなければなりません（<em class="rfc2119">MUST</em>）。
+    その <code>application/warc-fields</code> の本文は、下の表で必須とした欄を含まなければ
+    なりません（<em class="rfc2119">MUST</em>）。
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>conformsTo</code></td><td>はい</td>
+          <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/</code>。この欄は
+          ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
+      <tr><td><code>format</code></td><td>はい</td>
+          <td><code>WARC File Format 1.1</code>。</td></tr>
+      <tr><td><code>software</code></td><td>はい</td>
+          <td>producer とその版。</td></tr>
+      <tr><td><code>robots-policy</code></td><td>いいえ</td>
+          <td><code>ignore</code>: producer は <code>robots.txt</code> を見ません。ページを
+          そもそも取り込むかどうかは、取り込みを求める側が決めることです。</td></tr>
+      <tr><td><code>description</code></td><td>いいえ</td>
+          <td>何を取り込んだかを述べる自由な文。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: warcinfo
+WARC-Record-ID: &lt;urn:uuid:0b7e8a52-6a63-4f0e-9d0b-6f1c2a3e4d5f&gt;
+WARC-Date: 2026-11-01T02:14:31.882Z
+WARC-Filename: data-000.warc.gz
+Content-Type: application/warc-fields
+Content-Length: 203
+
+software: browserhive/23.0.0
+format: WARC File Format 1.1
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/
+robots-policy: ignore
+description: Capture of https://shop.example/</pre>
+  <p>
+    <code>conformsTo</code> が名指すのは本プロファイルで、[[WARC]] ではありません。基底の形式は
+    <code>format</code> が名指し、適合するファイルはどれも WARC 1.1 のファイルです
+    （Conformance を参照）。名乗りが 1 つなら、読み手はどちらを取るか迷いません。読み手は、
+    <code>conformsTo</code> 以外の何かから、本仕様のある版への適合を推し量ってはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+  </p>
+</section>
+
+<section id="files">
+  <h2>Records and files</h2>
+  <p>
+    1 つのレコードが 2 つのファイルにまたがってはなりません（<em class="rfc2119">MUST NOT</em>）。
+    レコードは 1 つのファイルに丸ごと書かれ、producer は <code>continuation</code> レコードを
+    書きません。1 つの<a>交信</a>のレコードは、同じファイルに在らなければならず
+    （<em class="rfc2119">MUST</em>）、1 つの<a>写し</a>の 2 つのレコードも同じです
+    （<em class="rfc2119">MUST</em>）。
+  </p>
+  <p class="note">
+    1 つの取り込みが、2 本以上のファイルを書くことがあります。それらのファイルの名前と、
+    producer がいつ新しいファイルを始めるかは、ファイルを収めるパッケージの決まりで、1 本の
+    ファイルの決まりではありません。[[BROWSERHIVE-WACZ-PROFILE]] を参照してください。
+  </p>
+</section>
+
+<section id="exchanges">
+  <h2>Exchanges</h2>
+  <p>
+    <dfn data-lt="exchange">交信</dfn>は、ブラウザが送った 1 つのリクエストと、それに対して受け取った
+    レスポンスです。producer は交信を <code>request</code> レコードと <code>response</code>
+    レコードで記録し、レスポンスを本文なしで記録したときは、さらに
+    <a>body not kept のレコード</a>を書きます。<code>request</code> レコードと
+    <code>response</code> レコードは、<code>WARC-Concurrent-To</code> で互いを名指さなければ
+    なりません（<em class="rfc2119">MUST</em>）。
+  </p>
+  <p>
+    1 つの交信のレコードは、同じ <code>WARC-Date</code> を持たなければなりません
+    （<em class="rfc2119">MUST</em>）。その値は、ブラウザがリクエストを始めた時刻で、ブラウザが
+    知らせたとおりのものです。redirect するレスポンスは、その交信を終えます。redirect の後に
+    続くリクエストは、自分の時刻を持つ別の交信を始めます。
+  </p>
+  <p>
+    <code>response</code> レコードの payload は、交信を運んだプロトコルの版に関わらず、
+    HTTP/1.1 の形 [[RFC9112]]（ステータス行、ヘッダの欄、本文の順）でなければなりません
+    （<em class="rfc2119">MUST</em>）。
+  </p>
+  <p class="note" title="なぜ交信全体で 1 つの時刻なのか">
+    [[WARC]] は、レコードの日時をその取り込みが始まった瞬間とし、1 つの取り込みの出来事の
+    レコードに 1 つの日時を共有させます。交信にとってその瞬間は、ブラウザがリクエストを
+    始めたときです。producer がレコードを組み立てる時刻は、本文が届くのにかかった時間だけ
+    遅れ（大きな本文なら数分になります）、ページを取りに行った時刻ではなく producer が書いた
+    時刻を述べてしまいます。
+  </p>
+  <p class="note" title="なぜ HTTP/1.1 なのか">
+    既存の WARC の読み手は、<code>response</code> レコードの payload を HTTP/1.1 として
+    読みます。そのため HTTP/2 や HTTP/3 で運ばれた交信も HTTP/1.1 の形で書き、運んだ
+    プロトコルの版は payload に残りません。
+  </p>
+</section>
+
+<section id="payloads">
+  <h2>Payloads</h2>
+  <p>
+    ブラウザは文字の本文を、ほかの誰かが見る前に文字へ読み替え、道具には文字として渡します。
+    それをバイト列に書き戻すと、書き手が選んだ符号の本文になります —— 両者がたまたま一致
+    しない限り、オリジンが送った符号ではありません。この節の要件は、各レコードの payload を
+    wire を渡ったバイト列に留め、payload digest がオリジンとブラウザの送ったものを保証する
+    ようにします。
+  </p>
+
+  <section id="response-payloads">
+    <h3>Response payloads</h3>
+    <p>
+      本文を持つ <code>response</code> レコードの payload は、サーバが送ったバイト列から
+      <code>Content-Encoding</code> が名指す content-coding を外し、ほかは何も変えないもので
+      なければなりません（<em class="rfc2119">MUST</em>）。とくに producer は、文字の本文を
+      ある文字符号から別の文字符号に変換してはなりません（<em class="rfc2119">MUST NOT</em>）。
+      Shift_JIS で送られた本文はその Shift_JIS のバイト列のまま、media type が charset を
+      宣言しない本文は、ブラウザがどの charset で読んだかに関わらず、送られたとおりに保存します。
+    </p>
+    <p>
+      <code>data:</code> URL はどのサーバも送りません。その payload は URL が運ぶデータを、URL の
+      定めるとおり（base64、または percent-encoding をバイトとして）復号したもので、やはり変換
+      しません。
+    </p>
+    <p>
+      本文をバイト列として得られない producer は、文字から組み直した本文を保存しては
+      なりません（<em class="rfc2119">MUST NOT</em>）。そのレスポンスは、空の payload と、
+      <code>truncated</code> が <code>not-intercepted</code> の
+      <a>body not kept のレコード</a>で記録します。
+    </p>
+  </section>
+
+  <section id="request-payloads">
+    <h3>Request payloads</h3>
+    <p>
+      本文を持つ <code>request</code> レコードの payload は、ブラウザがリクエストの本文として
+      送ったバイト列でなければなりません（<em class="rfc2119">MUST</em>）。それをバイト列として
+      得られない producer は、文字から組み直した本文を保存してはなりません
+      （<em class="rfc2119">MUST NOT</em>）。そのリクエストは本文なしで記録します。
+    </p>
+  </section>
+</section>
+
+<section id="records-of-bodies-not-kept">
+  <h2>Records of bodies not kept</h2>
+  <p>
+    サーバが送った本文を持たずに記録したレスポンスのそれぞれについて —— 送る本文を持たない
+    レスポンス（<code>HEAD</code> リクエストへのもの、ステータス <code>1xx</code>・<code>204</code>・
+    <code>3xx</code>・<code>304</code>）を除いて —— <code>response</code> レコードを持つ
+    ファイルは、<code>metadata</code> レコード —— 以下
+    <dfn data-lt="record of a body not kept">body not kept のレコード</dfn> —— も持たなければ
+    なりません（<em class="rfc2119">MUST</em>）。その <code>WARC-Target-URI</code> は
+    レスポンスの URL で、<code>WARC-Refers-To</code> は <code>response</code> レコードの
+    <code>WARC-Record-ID</code> でなければならず（<em class="rfc2119">MUST</em>）、
+    <code>application/warc-fields</code> の本文は次を含まなければなりません
+    （<em class="rfc2119">MUST</em>）:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>truncated</code></td><td>はい</td>
+          <td>レコードが本文を持たない理由。下の値のどれか。</td></tr>
+      <tr><td><code>encodedDataLength</code></td><td>いいえ</td>
+          <td>レスポンス全体が wire を渡ったときの大きさ（バイト）。producer が知っている
+          場合に。</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><code>too-large</code> —— 本文が、producer が 1 つの本文に置いた上限より大きかった。</li>
+    <li><code>task-cap</code> —— 本文を残すと、取り込みが残した本文が、producer がその全体に
+        置いた上限を超えるところだった。</li>
+    <li><code>url-policy</code> —— producer の URL の方針が、交信を本文なしで残すよう求めた。</li>
+    <li><code>content-type</code> —— producer の media type の方針が、レスポンスの media type
+        の本文を残さないよう求めた。</li>
+    <li><code>not-intercepted</code> —— 本文は wire を渡ったが、producer がバイト列として
+        得られなかった（<a href="#response-payloads"></a> を参照）。</li>
+  </ul>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://example.com/api/feed
+WARC-Date: 2026-10-30T02:14:31.882Z
+WARC-Refers-To: &lt;urn:uuid:5c1f0b8e-2a77-4a5e-9d3e-0f6f3b1d2c4a&gt;
+Content-Type: application/warc-fields
+Content-Length: 53
+
+truncated: not-intercepted
+encodedDataLength: 4821</pre>
+  <p>
+    サイズの上限で落とした本文（<code>too-large</code> と <code>task-cap</code>）の
+    <code>response</code> レコードは <code>WARC-Truncated: length</code> を持ち
+    （<em class="rfc2119">MUST</em>）、取り込めなかった本文のものは
+    <code>WARC-Truncated: unspecified</code> を持たなければなりません
+    （<em class="rfc2119">MUST</em>）。WARC ファイルだけを読む読み手が、空の payload を本文と
+    取り違えないようにするためです。
+  </p>
+  <p class="note">
+    方針で省いた本文は途中で切ったものではないので、その <code>response</code> レコードは
+    <code>WARC-Truncated</code> を持ちません。どの上限と方針が効いていたかは、WARC ファイルの
+    外、ファイルを収めるパッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+</section>
+
+<section id="records-of-withheld-requests">
+  <h2>Records of withheld requests</h2>
+  <p>
+    producer が方針によって差し止めたリクエストのそれぞれについて、取り込みの WARC ファイルは
+    <code>metadata</code> レコード —— 以下
+    <dfn data-lt="record of a withheld request">withheld request のレコード</dfn> —— を
+    含まなければなりません（<em class="rfc2119">MUST</em>）。その
+    <code>WARC-Target-URI</code> はリクエストの URL でなければならず
+    （<em class="rfc2119">MUST</em>）、<code>application/warc-fields</code> の本文は次を
+    含まなければなりません（<em class="rfc2119">MUST</em>）:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>action</code></td><td>はい</td>
+          <td>producer が何をしたか。<code>deny</code>: リクエストを送らなかった。その URL に
+          ついて、取り込みを行う機械から出たものはありません。<code>no-archive</code>:
+          リクエストを通し、オリジンは答えたが、この記録のほかには交信の何も残さなかった。
+          リクエストが送られたかどうかを述べるのはこの欄です。</td></tr>
+      <tr><td><code>pattern</code></td><td>はい</td>
+          <td>一致したパターン。producer の方針の綴りのとおりで、読み手がそちらで引き当て
+          られるように。</td></tr>
+      <tr><td><code>method</code></td><td>はい</td>
+          <td>リクエストのメソッド。</td></tr>
+      <tr><td><code>resourceType</code></td><td>いいえ</td>
+          <td>ページが何を取りに行っていたか。取り込みが知っている場合に。</td></tr>
+      <tr><td><code>target</code></td><td>いいえ</td>
+          <td>何がリクエストを出したか: <code>page</code>、<code>iframe</code>（browser が
+          ページと別に走らせるフレーム。多くは別サイトのもの）、<code>worker</code>、
+          <code>service_worker</code>。取り込みが述べないときは置きません。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://www.example-analytics.com/collect?v=2
+WARC-Date: 2026-09-06T02:14:31.882Z
+Content-Type: application/warc-fields
+Content-Length: 87
+
+action: deny
+pattern: *://*.example-analytics.com/*
+method: POST
+resourceType: XHR</pre>
+  <p>
+    <code>deny</code> は取り込みが起こすすべてのリクエストに届くので、そのレコードは、ページの
+    どの部分がリクエストを出したかに関わらず書かなければなりません
+    （<em class="rfc2119">MUST</em>）。producer がほかには記録しない部分のリクエストも含みます。
+  </p>
+  <p>
+    withheld request のレコードはレスポンスも本文も持ちません。主張しているのは、ページがその
+    URL を要求したこと、そして producer がそれについて何をするか決めたこと —— リクエストが
+    失敗したという意味でも、オリジンが何も返さなかったという意味でもありません。オリジンに
+    到達できなかった取り込みは、これをこの形で報告してはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+  </p>
+  <p>
+    交信を残して本文だけを残さない方針は、この種のレコードを生みません。<code>request</code> と
+    <code>response</code> のレコードは通常どおり書かれ、欠けている本文は、<code>truncated</code>
+    が <code>url-policy</code> の <a>body not kept のレコード</a>で報告されます —— 上限で
+    落としたものとしては報告されません。
+  </p>
+</section>
+
+<section id="records-of-windows-not-opened">
+  <h2>Records of windows not opened</h2>
+  <p>
+    取り込みは 1 つのページを記録し、producer はページに新しい top-level browsing context ——
+    ウィンドウやタブ —— を与えません（[[BROWSERHIVE-WACZ-PROFILE]]）。ページがそれを求めた
+    1 回ごとに、取り込みの WARC ファイルは <code>metadata</code> レコード —— 以下
+    <dfn data-lt="record of a window not opened">window not opened のレコード</dfn> —— を
+    含まなければなりません（<em class="rfc2119">MUST</em>）。その
+    <code>WARC-Target-URI</code> は、そのウィンドウが読み込むはずだった URL を browser が
+    知らせたとおりのものでなければなりません（<em class="rfc2119">MUST</em>）: ページが名指し
+    しなければ <code>about:blank</code>、form が求めたなら送る本文を除いた action の URL です。
+    <code>application/warc-fields</code> の本文は次を含まなければなりません
+    （<em class="rfc2119">MUST</em>）:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>window</code></td><td>はい</td>
+          <td><code>not-opened</code>。この版は、ほかの値を定めません。</td></tr>
+      <tr><td><code>windowName</code></td><td>いいえ</td>
+          <td>ページがウィンドウに付けた名前。付けなければ <code>_blank</code>。ウィンドウを
+          名指ししない遷移（修飾キーつきの click など）で求めたときは置きません。</td></tr>
+      <tr><td><code>target</code></td><td>いいえ</td>
+          <td>何が求めたか: <code>page</code>、または <code>iframe</code>（browser がページと
+          別に走らせるフレーム。多くは別サイトのもの）。取り込みが述べないときは置きません。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: https://shop.example/campaign?from=top
+WARC-Date: 2026-10-01T02:14:31.882Z
+Content-Type: application/warc-fields
+Content-Length: 54
+
+window: not-opened
+windowName: _blank
+target: page</pre>
+  <p>
+    ウィンドウの文書のリクエストは送られていないので、その URL について、取り込みを行う機械から
+    出たものはありません。このレコードは、producer の URL の方針が URL に当たるかどうかに
+    関わらず書き、<code>action</code> を持ちません。これは
+    <a>withheld request のレコード</a>ではなく、読み手はそれとして数えてはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+  </p>
+</section>
+
+<section id="snapshots">
+  <h2>Snapshots</h2>
+  <p>
+    <dfn data-lt="snapshot">写し</dfn>は、取り込みのある瞬間に、ページの主フレームの文書が
+    どうなっていたかを写したものです。producer は写しを、そのときブラウザが持っている文書から
+    —— スクリプトが変えたところは変わったまま —— 作り、サーバが送ったものからは作りません。
+    写しは、次のどれかの時点で取ります:
+  </p>
+  <ul>
+    <li><code>after-load</code> —— ページが読み込まれて落ち着き、<a>behavior</a> がまだ 1 つも
+        走っていない。</li>
+    <li><code>after-behaviors</code> —— 取り込みがページで走らせた behavior が終わった。</li>
+  </ul>
+  <p>
+    <dfn>behavior</dfn> は、取り込みがページ自身のもののほかにページで走らせるコードです。
+    たとえば検索の form に記入して送るものです。1 つの取り込みは各時点で写しを高々 1 つ取り、
+    behavior を走らせなかったときは <code>after-behaviors</code> では取りません。behavior の
+    コード、取り込みがどの時点で写しを取ったか、ある時点で取らなかった理由は、ファイルを収める
+    パッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+  <p>
+    producer は写しを、一緒に書く 2 つのレコードで記録します: 写しを持つ <code>resource</code>
+    レコードと、写しが何かを述べる <code>metadata</code> レコードです。2 つのレコードは
+    <code>WARC-Concurrent-To</code> を持ってはなりません（<em class="rfc2119">MUST NOT</em>）。
+    写しは<a>交信</a>の一部ではありません。[[WARC]] はその欄が結ぶレコードに 1 つの日時を
+    持たせますが、写しは、その文書を読み込んだ交信と日時を共有しません。
+  </p>
+
+  <section id="snapshot-resource-records">
+    <h3>The <code>resource</code> record</h3>
+    <p>
+      写しの <code>resource</code> レコードは、写しを block として持ち、次のヘッダの欄を
+      持たなければなりません（<em class="rfc2119">MUST</em>）:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>WARC-Target-URI</code></td><td>はい</td>
+            <td><code>urn:browserhive:snapshot:</code> に続けて、時点、コロン、写しを取った
+            瞬間の文書の URL から fragment を除いたもの。たとえば
+            <code>urn:browserhive:snapshot:after-load:https://shop.example/</code>。ページは
+            History API で、別の文書を読み込まずに文書の URL を変えられるので、その URL は文書を
+            読み込んだ URL と同じとは限りません。</td></tr>
+        <tr><td><code>WARC-Date</code></td><td>はい</td>
+            <td>producer が写しを取った瞬間。</td></tr>
+        <tr><td><code>Content-Type</code></td><td>はい</td>
+            <td><code>text/html; charset=utf-8</code>。</td></tr>
+        <tr><td><code>WARC-Block-Digest</code></td><td>はい</td>
+            <td>block の digest。</td></tr>
+        <tr><td><code>WARC-Payload-Digest</code></td><td>はい</td>
+            <td>payload の digest。<code>resource</code> レコードの payload は block そのもの
+            なので [[WARC]]、同じバイト列から計算します。</td></tr>
+      </tbody>
+    </table>
+    <pre class="text">
+WARC/1.1
+WARC-Type: resource
+WARC-Record-ID: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
+WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.415Z
+Content-Type: text/html; charset=utf-8
+WARC-Block-Digest: sha256:RK4XPNMRVNTPF7OWYGYRXMHDFC5H2RF7BH74Y2KKIRRELLG6MZJQ
+WARC-Payload-Digest: sha256:RK4XPNMRVNTPF7OWYGYRXMHDFC5H2RF7BH74Y2KKIRRELLG6MZJQ
+Content-Length: 237
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;&lt;head&gt;&lt;base href="https://shop.example/results"&gt;
+&lt;meta charset="utf-8"&gt;&lt;title&gt;Results for lamp&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;form role="search"&gt;&lt;input name="q" value="lamp"&gt;&lt;/form&gt;
+&lt;h1&gt;3 results&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;</pre>
+    <p>
+      この例では、behavior がページで <q>lamp</q> を検索しました。ページは結果を表示し、別の
+      文書を読み込まずに URL を <code>https://shop.example/</code> から変えました。behavior が
+      検索の欄に打ち込んだ値は、その欄の <code>value</code> 属性として写しに入っており、head の
+      先頭の <code>base</code> 要素は producer が入れたものです（<a href="#snapshot-content"></a>
+      を参照）。
+    </p>
+    <p class="note" title="なぜそれ自身の URI なのか">
+      [[WARC]] は、<code>resource</code> レコードの <code>http</code>・<code>https</code> の
+      target URI を、その URI に対して返されたもののためにとっておき、収集のほかの成果物には
+      合成した target URI を用意しています。写しはそうした成果物です。それ自身の URI の下に
+      あれば、どの読み手も写しを、サーバが文書の URL に対して返したものと取らず、アーカイブした
+      ページを配る読み手は、時刻がどうであれ、写しをその URL のレスポンスと取り違えません。
+    </p>
+  </section>
+
+  <section id="snapshot-metadata-records">
+    <h3>The <code>metadata</code> record</h3>
+    <p>
+      写しの <code>metadata</code> レコードは、写しが何かを述べます。その
+      <code>WARC-Refers-To</code> は写しの <code>resource</code> レコードの
+      <code>WARC-Record-ID</code> で、<code>WARC-Target-URI</code> と <code>WARC-Date</code> は
+      そのレコードのものでなければならず（<em class="rfc2119">MUST</em>）、
+      <code>application/warc-fields</code> の本文は次を含まなければなりません
+      （<em class="rfc2119">MUST</em>）:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>snapshot</code></td><td>はい</td>
+            <td>producer が写しを取った時点: <code>after-load</code> か
+            <code>after-behaviors</code>。</td></tr>
+        <tr><td><code>document-uri</code></td><td>はい</td>
+            <td>写しを取った瞬間の文書の URL を、ブラウザが持っていたとおりに。fragment も
+            含めます。</td></tr>
+        <tr><td><code>document-record</code></td><td>いいえ</td>
+            <td>文書を届けた <code>response</code> レコードの <code>WARC-Record-ID</code>
+            （山括弧を含めて）。そのレコードは、取り込みの別のファイルにあってもかまいません。
+            取り込みがそのレコードを持たないときは置きません。</td></tr>
+        <tr><td><code>secrets-replaced</code></td><td>はい</td>
+            <td>producer が写しの中で<a>シークレット</a>の値を置き換えた回数を 10 進で
+            （<a href="#snapshot-content"></a> を参照）。置き換えなかったときは
+            <code>0</code>。</td></tr>
+      </tbody>
+    </table>
+    <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.415Z
+WARC-Refers-To: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
+Content-Type: application/warc-fields
+Content-Length: 158
+
+snapshot: after-behaviors
+document-uri: https://shop.example/results
+document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
+secrets-replaced: 0</pre>
+    <p>
+      この例の <code>document-uri</code> はページが変えた後の URL で、
+      <code>document-record</code> は、<code>https://shop.example/</code> から文書を届けた
+      <code>response</code> レコードを名指します。
+    </p>
+    <p>
+      本文は <code>action</code>・<code>truncated</code>・<code>window</code> を持ってはならず
+      （<em class="rfc2119">MUST NOT</em>）、読み手はこのレコードを
+      <a>withheld request のレコード</a>・<a>body not kept のレコード</a>・
+      <a>window not opened のレコード</a>として数えてはなりません
+      （<em class="rfc2119">MUST NOT</em>）。このレコードは <code>WARC-Payload-Digest</code> を
+      持ちません。[[WARC]] はその欄を、payload が定まっているレコードにしか認めていません。
+    </p>
+  </section>
+
+  <section id="snapshot-content">
+    <h3>What a snapshot holds</h3>
+    <p>
+      写しの <code>resource</code> レコードの block は、producer が文書を HTML に直列化し、
+      UTF-8 で符号化したものです。それは producer が作ったもので、サーバのものではなく、読み手は
+      それをオリジンが送ったものと取ってはなりません（<em class="rfc2119">MUST NOT</em>）。
+      オリジンがその文書について送ったものは、<code>document-record</code> が名指す
+      <code>response</code> レコードにあります。
+    </p>
+    <p>
+      写しの head の最初の要素は、<code>href</code> 属性が、写しを取った瞬間の文書の base URL
+      から fragment を除いたものである <code>base</code> 要素でなければなりません
+      （<em class="rfc2119">MUST</em>）。文書の base URL は、ページが相対 URL を解決した URL で、
+      ページが自分の <code>base</code> 要素で別のものを定めていなければ、文書の URL です。読み手は
+      写しを写し自身の URI の下で配るので、この要素によって、写しの中の相対 URL がページの中と
+      同じに解決します。
+    </p>
+    <p>
+      写しは、ページのスクリプトを含んではなりません（<em class="rfc2119">MUST NOT</em>）。
+      すなわち、どの名前空間の <code>script</code> 要素も、名前が <code>on</code> で始まる属性も、
+      それらを持ちうる文書を運ぶ <code>srcdoc</code> 属性も持たず、<code>href</code>・
+      <code>xlink:href</code>・<code>src</code>・<code>action</code>・<code>formaction</code>・
+      <code>data</code> の属性に、<code>javascript:void(0)</code> のほかの
+      <code>javascript:</code> の URL を持ちません。
+    </p>
+    <p>
+      写しの中で、<code>type</code> が <code>password</code> の <code>input</code> 要素は、
+      その欄が何を持っていたかに関わらず、<code>value</code> 属性を持ってはなりません
+      （<em class="rfc2119">MUST NOT</em>）。
+    </p>
+    <p>
+      <dfn data-lt="secret">シークレット</dfn>は、取り込みを求めた側が、behavior に読ませるために
+      秘密として渡した値です（[[BROWSERHIVE-WACZ-PROFILE]]）。写しは、シークレットの値を、
+      そのままの形でも、HTML の直列化が文字を escape した形（たとえば <code>&amp;</code> を
+      <code>&amp;amp;</code> とした形）でも、含んではなりません（<em class="rfc2119">MUST NOT</em>）。
+      producer は現れたところをそれぞれ置き換え、置き換えた回数を <code>secrets-replaced</code>
+      に数えます。
+    </p>
+  </section>
+
+  <section id="making-a-snapshot" class="informative">
+    <h3>Making a snapshot</h3>
+    <p>
+      producer は、次のようにして、これらの要件を満たし、写しをページが表示していたものに
+      近く保てます:
+    </p>
+    <ul>
+      <li>文書を、producer 自身のスクリプトの文脈（Chromium では isolated world）から読みます。
+          そこでは、ページのスクリプトが文書の読み方を変えられません。</li>
+      <li>文書を複製し、ページがマークアップの外に持っているものを複製に書き込みます: 各欄の
+          いまの値を <code>value</code> 属性として（<code>textarea</code> では中身として）、
+          どの box に check が入り、どの option が選ばれているか、開いた shadow root を
+          <code>shadowrootmode</code> 属性つきの <code>template</code> 要素として、ページが
+          adopt した style sheet を <code>style</code> 要素として、各 <code>canvas</code> を
+          それが表示していた画像として。ページが画素を読めなかった canvas は空のまま、
+          パスワードの欄は値を持ちません。</li>
+      <li><code>script</code> と <code>noscript</code> の要素、スクリプトを先読みする
+          <code>link</code> 要素（<code>rel="modulepreload"</code>、または
+          <code>as="script"</code> の <code>rel="preload"</code>）を取り除きます。event handler
+          の属性と <code>srcdoc</code> を取り除き、<code>javascript:</code> の URL を
+          <code>javascript:void(0)</code> に置き換えます。リンクはリンクの見た目のまま
+          残ります。</li>
+      <li>フレームの <code>src</code> はそのままにします。フレームの文書は写しに含まれず、
+          読み手は、取り込みがその URL について記録したものを表示します。</li>
+      <li>文書の doctype を、無かったなら無いまま、もとのとおりに残します。読み手が写しを
+          ページと同じモードで描くようにするためです。</li>
+      <li>複製の head の先頭に、ページが使っていた文書の base URL を持つ <code>base</code>
+          要素を置きます。</li>
+      <li>複製を直列化し、その結果の中のシークレットを、そのままの形と escape した形のどちらも
+          <code>***</code> に置き換えます。</li>
+    </ul>
+  </section>
+</section>
+
+<section id="security-and-privacy-considerations" class="informative">
+  <h2>Security and privacy considerations</h2>
+  <p>
+    WARC ファイルは wire を渡ったものを持ちます。<code>request</code> レコードはブラウザが
+    送ったヘッダの欄を持ち、そこには cookie や認証の情報が含まれることがあります。
+    <code>response</code> レコードはオリジンが返したものを、その中の個人の情報も含めて
+    持ちます。
+  </p>
+  <p>
+    <a>withheld request のレコード</a>は一度も送られなかったリクエストの URL を、
+    <a>window not opened のレコード</a>は一度も読み込まれなかった文書の URL を持ちます。
+    どちらの URL も、クエリ文字列に識別子を運んでいることがあります。リクエストを差し止めると
+    オリジンには届きませんが、その URL はファイルに残ります。
+  </p>
+  <p>
+    <a>写し</a>は、そのときのページの文字を持ち、ページのスクリプトと取り込みの
+    <a>behavior</a> が欄に入れたものも持ちます: パスワードの欄を除き、どの欄の値も写しに
+    入ります。producer は、そこに見つけた<a>シークレット</a>の値を、そのままの形でも HTML の
+    escape の形でも置き換えますが、ページが変換したシークレット（たとえば URL に符号化した
+    もの）や、誰もシークレットと告げなかったものは見つけません。写しの
+    <code>document-uri</code> は文書の URL の fragment を残します。fragment はサーバに送られる
+    ことがなく、ログインの手順によっては、ページにトークンを渡すのに使われます。
+  </p>
+  <p>
+    ファイルを人に渡す者は、これらをすべて渡します。写しが除くものを除けば、本仕様は producer に
+    そのどれかを取り除くことを求めません。取り込みが何をレコードに残さないかは取り込みの方針が決め、方針は
+    ファイルを収めるパッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+</section>
+
+</body>
+</html>

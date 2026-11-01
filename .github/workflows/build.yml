@@ -22,6 +22,8 @@ jobs:
           # 版を足したらここにも足す。焼かれない版は、壊れていても気づけない。
           - 1.0.0
           - 1.0.0/ja
+          - 1.1.0
+          - 1.1.0/ja
     steps:
       - uses: actions/checkout@v4
 
@@ -67,6 +69,7 @@ jobs:
           # 無い」か「パスが違う」の 2 つしかなく、どちらもブラウザを起こさずに確かめられる。
           FAIL=0
           for doc in 1.0.0/index.html 1.0.0/ja/index.html \
+                     1.1.0/index.html 1.1.0/ja/index.html \
                      latest/index.html latest/ja/index.html; do
             src=$(grep -o 'src="[^"]*respec[^"]*"' "$doc" | sed 's/src="//; s/"$//')
             if [ -z "$src" ]; then
@@ -127,7 +130,8 @@ jobs:
           # 例のレコードの Content-Length は人が手で数えて書いた値で、版を写すたびに一緒に写る。
           # browserhive-specs（WACZ Profile）では誤った数が 13 版のあいだ誰にも気づかれずに残った
           # （2026-11-01 に訂正）。application/warc-fields の行の終わりは CRLF なので、本文を CRLF で
-          # 数え直して照らす。
+          # 数え直して照らす。それ以外の本文（1.1.0 からの写しの HTML）は、producer が書くとおり
+          # 行の終わりが LF で最後に改行が無いので、書いたバイト列のまま数える。
           python3 - <<'PY'
           import glob, html, os, re, sys
           docs = sorted({p for g in os.environ["DOCS"].split() for p in glob.glob(g)})
@@ -146,7 +150,10 @@ jobs:
                       continue
                   seen += 1
                   lines = body.strip("\n").split("\n")
-                  actual = 0 if lines == [""] else len(("\r\n".join(lines) + "\r\n").encode("utf-8"))
+                  if re.search(r"^Content-Type: application/warc-fields$", head, flags=re.M):
+                      actual = 0 if lines == [""] else len(("\r\n".join(lines) + "\r\n").encode("utf-8"))
+                  else:
+                      actual = len(body.encode("utf-8"))
                   if actual != int(m.group(1)):
                       print(f"::error file={p}::Content-Length {m.group(1)} だが、本文は {actual} バイト（1 行目: {lines[0]}）")
                       bad += 1
@@ -240,8 +247,30 @@ jobs:
           DOCS=$(find built -name '*.html' | sort)
           test -n "$DOCS" || { echo "::error::検査対象の HTML が無い"; exit 1; }
           echo "対象: $(echo "$DOCS" | wc -l) 文書"
-          REFS=$(grep -hoE '(href|src)="https?://[^"]*"' $DOCS \
-                 | sed -E 's/^(href|src)="//; s/"$//' | sort -u)
+          # 拾うのは要素の href・src の値だけ。文字列として grep すると、例の <pre> に書いた HTML
+          # （1.1.0 の写しの <base href="https://shop.example/…">）までリンクとして叩いてしまう。
+          REFS=$(python3 - $DOCS <<'PY'
+          import sys
+          from html.parser import HTMLParser
+
+          class Links(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.urls = set()
+
+              def handle_starttag(self, tag, attrs):
+                  for name, value in attrs:
+                      if name in ("href", "src") and value and value.startswith(("http://", "https://")):
+                          self.urls.add(value)
+
+          urls = set()
+          for path in sys.argv[1:]:
+              parser = Links()
+              parser.feed(open(path, encoding="utf-8").read())
+              urls |= parser.urls
+          print("\n".join(sorted(urls)))
+          PY
+          )
           for U in $REFS; do
             if echo "$U" | grep -qE "$SKIP"; then
               echo "  skip $U (toolchain が生成した定型リンク)"

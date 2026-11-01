@@ -6,7 +6,8 @@
 
 | 仕様 | 版 | 日本語訳 |
 |---|---|---|
-| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | **1.0.0** | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/) |
+| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | **1.1.0** | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/ja/) |
+| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 1.0.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/) |
 
 各版は**後方互換ではない**。BrowserHive は最新版しか出力しないが、古い版の文書は
 それぞれの URL に残す —— 既存の WARC ファイルの warcinfo の `conformsTo` がそこを指しており、
@@ -38,6 +39,8 @@ CI（`.github/workflows/build.yml`）は公開の経路に居らず、検査だ�
 - 各版を `w3c/spec-prod` で焼けること（markup の検査を含む）
 - 同梱の ReSpec が各原稿から解決すること
 - 最新の版（`latest/`）の節が、原稿に id を持つこと
+- 例の WARC レコードの `Content-Length` が、本文のバイト数と合うこと
+- 日本語訳の冒頭の版が、置き場の版と合うこと
 - 著者が書いたリンクが 200 を返すこと
 
-ローカルで見るには `1.0.0/index.html` をブラウザで開く。
+ローカルで見るには `1.1.0/index.html` をブラウザで開く。
