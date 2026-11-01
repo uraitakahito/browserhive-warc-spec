@@ -247,8 +247,30 @@ jobs:
           DOCS=$(find built -name '*.html' | sort)
           test -n "$DOCS" || { echo "::error::検査対象の HTML が無い"; exit 1; }
           echo "対象: $(echo "$DOCS" | wc -l) 文書"
-          REFS=$(grep -hoE '(href|src)="https?://[^"]*"' $DOCS \
-                 | sed -E 's/^(href|src)="//; s/"$//' | sort -u)
+          # 拾うのは要素の href・src の値だけ。文字列として grep すると、例の <pre> に書いた HTML
+          # （1.1.0 の写しの <base href="https://shop.example/…">）までリンクとして叩いてしまう。
+          REFS=$(python3 - $DOCS <<'PY'
+          import sys
+          from html.parser import HTMLParser
+
+          class Links(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.urls = set()
+
+              def handle_starttag(self, tag, attrs):
+                  for name, value in attrs:
+                      if name in ("href", "src") and value and value.startswith(("http://", "https://")):
+                          self.urls.add(value)
+
+          urls = set()
+          for path in sys.argv[1:]:
+              parser = Links()
+              parser.feed(open(path, encoding="utf-8").read())
+              urls |= parser.urls
+          print("\n".join(sorted(urls)))
+          PY
+          )
           for U in $REFS; do
             if echo "$U" | grep -qE "$SKIP"; then
               echo "  skip $U (toolchain が生成した定型リンク)"
