@@ -120,6 +120,78 @@ jobs:
           done
           exit $FAIL
 
+      - name: WARC の例の Content-Length が本文のバイト数と合うこと
+        env:
+          DOCS: "*/index.html */ja/index.html"
+        run: |
+          # 例のレコードの Content-Length は人が手で数えて書いた値で、版を写すたびに一緒に写る。
+          # browserhive-specs（WACZ Profile）では誤った数が 13 版のあいだ誰にも気づかれずに残った
+          # （2026-11-01 に訂正）。application/warc-fields の行の終わりは CRLF なので、本文を CRLF で
+          # 数え直して照らす。
+          python3 - <<'PY'
+          import glob, html, os, re, sys
+          docs = sorted({p for g in os.environ["DOCS"].split() for p in glob.glob(g)})
+          seen = bad = 0
+          for p in docs:
+              text = open(p, encoding="utf-8").read()
+              for pre in re.findall(r"<pre\b[^>]*>(.*?)</pre>", text, flags=re.S):
+                  s = html.unescape(pre).lstrip("\n")
+                  if not s.startswith("WARC/1.1"):
+                      continue
+                  head, sep, body = s.partition("\n\n")
+                  m = re.search(r"^Content-Length: (\d+)$", head, flags=re.M)
+                  if not sep or m is None:
+                      print(f"::error file={p}::WARC の例に Content-Length か、ヘッダの後の空行が無い")
+                      bad += 1
+                      continue
+                  seen += 1
+                  lines = body.strip("\n").split("\n")
+                  actual = 0 if lines == [""] else len(("\r\n".join(lines) + "\r\n").encode("utf-8"))
+                  if actual != int(m.group(1)):
+                      print(f"::error file={p}::Content-Length {m.group(1)} だが、本文は {actual} バイト（1 行目: {lines[0]}）")
+                      bad += 1
+          print(f"WARC の例: {seen} 個（{len(docs)} 文書）")
+          if seen == 0:
+              print("::error::WARC の例を 1 つも見つけられない。何も見ていない緑にしない")
+              bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: ja の冒頭の版が置き場の版と合うこと
+        env:
+          JA_DOCS: "*/ja/index.html"
+          TITLE: BrowserHive WARC Profile
+        run: |
+          # browserhive-specs では、前の版の訳を写して次の版を作ったとき冒頭の版を直し忘れ、5 版に
+          # 写り続けた（2026-11-01 に訂正）。latest/ja/ は latest/index.html の title の版と比べる。
+          python3 - <<'PY'
+          import glob, os, re, sys
+          title = os.environ["TITLE"]
+          checked = bad = 0
+          for p in sorted(glob.glob(os.environ["JA_DOCS"])):
+              version_dir = os.path.dirname(os.path.dirname(p))
+              version = os.path.basename(version_dir)
+              if version == "latest":
+                  en = open(os.path.join(version_dir, "index.html"), encoding="utf-8").read()
+                  t = re.search(r"<title>" + re.escape(title) + r" ([0-9.]+)</title>", en)
+                  want = t.group(1) if t else None
+              else:
+                  want = version
+              m = re.search(r"これは " + re.escape(title) + r" ([0-9.]+) の日本語訳です", open(p, encoding="utf-8").read())
+              checked += 1
+              if m is None or want is None:
+                  print(f"::error file={p}::冒頭の「これは {title} N の日本語訳です」か、比べる版が見つからない")
+                  bad += 1
+              elif m.group(1) != want:
+                  print(f"::error file={p}::冒頭は {m.group(1)} の日本語訳と書くが、置き場の版は {want}")
+                  bad += 1
+          print(f"ja の冒頭: {checked} 本")
+          if checked == 0:
+              print("::error::ja の原稿を 1 本も見つけられない。何も見ていない緑にしない")
+              bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
   linkcheck:
     needs: build
     runs-on: ubuntu-latest
