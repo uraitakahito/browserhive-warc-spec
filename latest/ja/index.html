@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.1.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.2.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.1.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.2.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -77,7 +77,7 @@
     BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
     までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
     名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
-    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.17.0 は、
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.22.0 は、
     パッケージの WARC ファイルがこの版に適合することを求めます。
   </p>
   <p class="note" title="WARC-Profile の欄とは別のもの">
@@ -95,7 +95,9 @@
     要り、それはファイルを書いている間にしか知りえません。
   </p>
   <p>
-    本プロファイルはそれを定めます。[[WARC]] の述べることは何も変えません。本プロファイルが
+    本プロファイルはそれを定めます。[[WARC]] の求めることは何も変えません。
+    <a>redacted のレコード</a>は [[WARC]] が勧めるものより少なく持ちますが、そのことを自分の欄で
+    名乗ります（Conformance を参照）。本プロファイルが
     足すレコードの多くは <code>metadata</code> レコードで、本プロファイルを知らない読み手は
     読み飛ばせます。<a>写し</a>は、それ自身の URI の下で <code>resource</code> レコードでも
     記録し、そのレコードはそうした読み手のためのものです: アーカイブしたページを配る読み手は、
@@ -117,6 +119,17 @@
   <p>
     適合するファイルは、適合する [[WARC]] ファイルです。本仕様は要求を<em>追加</em>します。
     取り除くことも、緩めることもしません。
+  </p>
+  <p>
+    <a>redacted のレコード</a>は [[WARC]] がレコードについて述べることから外れ、
+    そのことを自分の <code>BrowserHive-Redacted</code> の欄で名乗ります。
+    [[WARC]] は、<code>request</code> レコードの block が
+    <q>the full HTTP request sent over the network</q> を、<code>response</code> レコードの block が
+    <q>the full HTTP response received over the network</q> を持つことを勧めていますが、
+    redacted のレコードは、そのメッセージを値を置き換えた形で持ちます。
+    [[WARC]] は <code>WARC-Target-URI</code> を <q>the original URI</q> としていますが、
+    redacted のレコードでは、URI の値を置き換えたほかのレコードと同じく
+    （<a href="#redacted-records"></a> を参照）、その URI の値を置き換えた形です。
   </p>
   <p>
     本仕様における <em class="rfc2119">MUST</em>（〜しなければならない）、
@@ -146,7 +159,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -168,9 +181,9 @@ WARC-Filename: data-000.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/23.0.0
+software: browserhive/29.0.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -240,14 +253,17 @@ description: Capture of https://shop.example/</pre>
     それをバイト列に書き戻すと、書き手が選んだ符号の本文になります —— 両者がたまたま一致
     しない限り、オリジンが送った符号ではありません。この節の要件は、各レコードの payload を
     wire を渡ったバイト列に留め、payload digest がオリジンとブラウザの送ったものを保証する
-    ようにします。
+    ようにします。例外は、<code>BrowserHive-Redacted</code> の欄が <code>payload</code> を挙げる
+    <a>redacted のレコード</a>です。その payload の中の値は置き換えてあり、その payload digest が
+    保証するのは、レコードが持つバイト列だけです。
   </p>
 
   <section id="response-payloads">
     <h3>Response payloads</h3>
     <p>
       本文を持つ <code>response</code> レコードの payload は、サーバが送ったバイト列から
-      <code>Content-Encoding</code> が名指す content-coding を外し、ほかは何も変えないもので
+      <code>Content-Encoding</code> が名指す content-coding を外し、<a>redacted のレコード</a>が
+      置き換えるもの（<a href="#redacted-records"></a> を参照）のほかは何も変えないもので
       なければなりません（<em class="rfc2119">MUST</em>）。とくに producer は、文字の本文を
       ある文字符号から別の文字符号に変換してはなりません（<em class="rfc2119">MUST NOT</em>）。
       Shift_JIS で送られた本文はその Shift_JIS のバイト列のまま、media type が charset を
@@ -256,7 +272,7 @@ description: Capture of https://shop.example/</pre>
     <p>
       <code>data:</code> URL はどのサーバも送りません。その payload は URL が運ぶデータを、URL の
       定めるとおり（base64、または percent-encoding をバイトとして）復号したもので、やはり変換
-      しません。
+      しません。<a>redacted のレコード</a>が置き換えるものは、同じく例外です。
     </p>
     <p>
       本文をバイト列として得られない producer は、文字から組み直した本文を保存しては
@@ -269,12 +285,188 @@ description: Capture of https://shop.example/</pre>
   <section id="request-payloads">
     <h3>Request payloads</h3>
     <p>
-      本文を持つ <code>request</code> レコードの payload は、ブラウザがリクエストの本文として
+      本文を持つ <code>request</code> レコードの payload は、<a>redacted のレコード</a>が置き換える
+      もの（<a href="#redacted-records"></a> を参照）を除き、ブラウザがリクエストの本文として
       送ったバイト列でなければなりません（<em class="rfc2119">MUST</em>）。それをバイト列として
       得られない producer は、文字から組み直した本文を保存してはなりません
       （<em class="rfc2119">MUST NOT</em>）。そのリクエストは本文なしで記録します。
     </p>
   </section>
+</section>
+
+<section id="redacted-records">
+  <h2>Redacted records</h2>
+  <p>
+    <dfn data-lt="secret">シークレット</dfn>は、取り込みを求めた側が、
+    <a>behavior</a> に読ませるために秘密として渡した値です。
+    <dfn data-lt="hidden secret">隠すシークレット</dfn>は、
+    取り込みを求めた側が残すことを求めなかったシークレットです。その値は少なくとも 8 文字です:
+    producer は、それより短い値を、残すことを求めずに渡す要求を断ります。
+    取り込みがどのシークレットを渡され、そのどれを残したかは、
+    ファイルを収めるパッケージの <code>settings</code> に記録します
+    （[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+  <p>
+    各 <code>request</code> レコードと <code>response</code> レコードで、producer は、
+    隠すシークレットの値の出現を、
+    <code>WARC-Target-URI</code>、リクエスト行、HTTP のヘッダの欄の値、<a>文字の本文</a>の中で、
+    3 文字の <code>***</code> に置き換えなければなりません（<em class="rfc2119">MUST</em>）。
+    1 つでも置き換えたレコードが <dfn data-lt="redacted record">redacted のレコード</dfn>です。
+    ある出現が別の出現を含むときは、producer は長いほうを置き換え、
+    書いた <code>***</code> の 1 つを 1 回の置き換えとします。
+  </p>
+  <p>
+    出現は、producer が認識する値の形です: 値そのまま（UTF-8）と、次の綴りです。
+  </p>
+  <ul>
+    <li><code>encodeURIComponent</code> が符号化した形、
+        <code>application/x-www-form-urlencoded</code> の本文が符号化した形、
+        URL の path や query が符号化した形の percent-encoding（16 進の数字は大文字でも小文字でも）。</li>
+    <li>JSON の文字列の中で、JSON が求める escape だけを使った形。</li>
+    <li>HTML の中で、文字を <code>&amp;amp;</code>・<code>&amp;lt;</code>・
+        <code>&amp;gt;</code>・<code>&amp;quot;</code>・<code>&amp;nbsp;</code> にした形と、
+        アポストロフィを <code>&amp;#39;</code>・<code>&amp;#x27;</code>・
+        <code>&amp;apos;</code> のどれかにした形。</li>
+    <li>値だけを base64 にした形。</li>
+    <li>HTTP の Basic 認証の、符号化した認証情報の全体。復号すると値を持つものです。</li>
+    <li>base64 の <code>data:</code> URL のデータの全体。復号すると値を持つものです。</li>
+    <li>ヘッダの欄の値の中で、上のどれかの UTF-8 の 1 バイトずつを Latin-1 の 1 文字に読んだ形。
+        UTF-8 で届いた欄をブラウザが報告するときの形です。</li>
+  </ul>
+  <p>
+    producer は、ファイルのほかのどこにも出現を書いてはなりません
+    （<em class="rfc2119">MUST NOT</em>）。
+    ほかのレコードの <code>WARC-Target-URI</code> でも、同じように出現を置き換えます。
+  </p>
+  <p>
+    <code>WARC-Target-URI</code> は URI のままにします。[[WARC]] が URI を求めており、
+    URI には scheme が要るからです。値が scheme から始まるときなど、置き換えると URI の
+    scheme が無くなるときは、producer は結果の前に元の scheme とコロンを書かなければなりません
+    （<em class="rfc2119">MUST</em>）。値が <code>https://shop.example/a</code> のとき、
+    URI の <code>https://shop.example/a?b=c</code> は <code>https:***?b=c</code> になります。
+  </p>
+  <p>
+    出現を持つリクエストへのレスポンスは、シークレットの代わりになる cookie を設定することが
+    あります。producer がそのようなレスポンスを見て、その <code>Set-Cookie</code> のヘッダの欄が、
+    値の長さが 8 文字以上の cookie を設定しているとき、producer はその値を、
+    そのレスポンスが届いた瞬間から、隠すシークレットの値として扱わなければなりません
+    （<em class="rfc2119">MUST</em>）。そのレスポンスのレコードでも、この決まりでも同じです。
+  </p>
+  <p>
+    redacted のレコードは、producer がどこで値を何回置き換えたかを述べる
+    <code>BrowserHive-Redacted</code> の欄を、WARC のレコードのヘッダに持たなければなりません
+    （<em class="rfc2119">MUST</em>）:
+  </p>
+  <pre class="text">
+BrowserHive-Redacted: target-uri=1, headers=1, payload=2</pre>
+  <p>
+    この欄は、producer が 1 つ以上の出現を置き換えた場所のそれぞれについて 1 つの part を、
+    次の表の順に持ち、ほかの場所の part を持ちません:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Part</th><th>数えるもの</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>target-uri</code></td>
+          <td><code>WARC-Target-URI</code> の中の置き換え。
+          リクエスト行は同じ出現を繰り返すだけで、もう一度は数えません。</td></tr>
+      <tr><td><code>headers</code></td>
+          <td>HTTP のヘッダの欄の値の中の置き換え。</td></tr>
+      <tr><td><code>payload</code></td>
+          <td>本文の中の置き換え。</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+BrowserHive-Redacted = "BrowserHive-Redacted" ":" redacted-part *( "," SP redacted-part )
+redacted-part        = part-name "=" part-count
+part-name            = "target-uri" | "headers" | "payload"
+part-count           = 1*DIGIT   ; 10 進。1 以上で、先頭に 0 を付けない</pre>
+  <p>
+    [[WARC]] はこの種の欄を認めています: その File and record model の節は、
+    拡張が新しい named field を定めることを認め、Named fields の節の General は、
+    認識できない名前の欄をソフトウェアに無視させます。
+    この欄の無い <code>request</code> レコードと <code>response</code> レコードは、
+    値を置き換えていてはなりません（<em class="rfc2119">MUST NOT</em>）。
+    それらは、本仕様の残りが述べるとおりのものを持ちます。
+    ほかの型のレコードは、<code>WARC-Target-URI</code> の値を置き換えていても、
+    この欄を持ってはなりません（<em class="rfc2119">MUST NOT</em>）。
+    読み手は、そこの <code>***</code> と URL の中の同じ字とを区別できません。
+  </p>
+  <p>
+    次の redacted の <code>request</code> レコードの抜粋では、隠すシークレットの値が、
+    クエリ、ヘッダの欄 1 つ、ページが送った form の 2 か所にありました:
+  </p>
+  <pre class="text">
+WARC-Type: request
+WARC-Target-URI: https://shop.example/login?key=***
+Content-Type: application/http;msgtype=request
+BrowserHive-Redacted: target-uri=1, headers=1, payload=2
+
+POST /login?key=*** HTTP/1.1
+Host: shop.example
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 32
+X-Api-Key: ***
+
+user=alice&amp;password=***&amp;note=***</pre>
+  <p>
+    この節の決まりでは、<dfn data-lt="text body">文字の本文</dfn>は、media type が次のどれかである
+    本文です。レスポンスの本文の media type はブラウザが判定したもの、
+    リクエストの本文の media type は <code>Content-Type</code> のヘッダの欄が宣言するものです。
+  </p>
+  <ul>
+    <li><code>text/*</code>。</li>
+    <li>JSON: <code>application/json</code> と、<code>+json</code> で終わる型。</li>
+    <li>XML: <code>application/xml</code>、<code>application/xhtml+xml</code> と、<code>+xml</code> で終わる型。</li>
+    <li>JavaScript: <code>application/javascript</code>・
+        <code>application/ecmascript</code>・<code>application/x-javascript</code>・
+        <code>application/x-ecmascript</code>。</li>
+    <li><code>application/x-www-form-urlencoded</code>。</li>
+  </ul>
+  <p>
+    文字の本文でない本文が出現を持つとき、
+    producer はその中を置き換えてはなりません（<em class="rfc2119">MUST NOT</em>）。
+    長さが変わると本文が壊れるためです。
+    producer はそのメッセージを、その本文なしで記録し、
+    レコードは <code>WARC-Truncated: secret</code> を持たなければなりません
+    （<em class="rfc2119">MUST</em>）。
+    [[WARC]] の WARC-Truncated の節は、拡張がほかの理由を定めることを認めています。
+    このように記録した <code>response</code> は、
+    <code>truncated</code> が <code>secret</code> の <a>body not kept のレコード</a>も持ちます。
+    そのレコードが述べるのはレスポンスだけなので、
+    <code>request</code> は <code>WARC-Truncated: secret</code> だけを持ちます。
+    本文を落としても何も置き換えたことにはならないので、
+    <code>BrowserHive-Redacted</code> のどの part にも数えません。
+    ほかに何も置き換えなかったレコードは、<code>WARC-Truncated</code> を持ち、
+    <code>BrowserHive-Redacted</code> を持ちません。
+  </p>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Record-ID: &lt;urn:uuid:a41d7e20-9b3c-4f15-8e62-5c0a7d3b1f94&gt;
+WARC-Target-URI: https://shop.example/export?key=***
+WARC-Date: 2026-11-07T02:14:31.882Z
+WARC-Refers-To: &lt;urn:uuid:7c2e4b19-3f6a-4d08-8a51-2b9d0e6f1c37&gt;
+Content-Type: application/warc-fields
+Content-Length: 44
+
+truncated: secret
+encodedDataLength: 4821</pre>
+  <p>
+    redacted のレコードと、producer が本文を落としたレコードの
+    <code>Content-Length</code>・<code>WARC-Block-Digest</code>・<code>WARC-Payload-Digest</code> と、
+    その HTTP のメッセージが持つ <code>Content-Length</code> のヘッダの欄は、
+    レコードが持っているバイト列を述べなければなりません（<em class="rfc2119">MUST</em>）。
+    producer は、どちらの digest の欄にも、置き換える前のバイト列や落とした本文の digest を
+    書いてはなりません（<em class="rfc2119">MUST NOT</em>）。
+    レコードが持っているバイト列と合わせると、読み手が値の候補を試せてしまうためです。
+  </p>
+  <p>
+    シークレットから作った値（ハッシュや暗号文など）は出現ではなく、
+    オリジンがレスポンスの本文で新しく発行した資格（JSON の token など）も出現ではありません。
+    本仕様は、ファイルがそれらを持たないとは主張しません。
+  </p>
 </section>
 
 <section id="records-of-bodies-not-kept">
@@ -286,7 +478,9 @@ description: Capture of https://shop.example/</pre>
     ファイルは、<code>metadata</code> レコード —— 以下
     <dfn data-lt="record of a body not kept">body not kept のレコード</dfn> —— も持たなければ
     なりません（<em class="rfc2119">MUST</em>）。その <code>WARC-Target-URI</code> は
-    レスポンスの URL で、<code>WARC-Refers-To</code> は <code>response</code> レコードの
+    レスポンスの URL で（<a>隠すシークレット</a>の値は置き換えた形。
+    <a href="#redacted-records"></a> を参照）、<code>WARC-Refers-To</code> は
+    <code>response</code> レコードの
     <code>WARC-Record-ID</code> でなければならず（<em class="rfc2119">MUST</em>）、
     <code>application/warc-fields</code> の本文は次を含まなければなりません
     （<em class="rfc2119">MUST</em>）:
@@ -312,6 +506,8 @@ description: Capture of https://shop.example/</pre>
         の本文を残さないよう求めた。</li>
     <li><code>not-intercepted</code> —— 本文は wire を渡ったが、producer がバイト列として
         得られなかった（<a href="#response-payloads"></a> を参照）。</li>
+    <li><code>secret</code> —— 本文が<a>文字の本文</a>でなく、<a>隠すシークレット</a>の値を
+        持っていた（<a href="#redacted-records"></a> を参照）。</li>
   </ul>
   <pre class="text">
 WARC/1.1
@@ -328,7 +524,9 @@ encodedDataLength: 4821</pre>
     サイズの上限で落とした本文（<code>too-large</code> と <code>task-cap</code>）の
     <code>response</code> レコードは <code>WARC-Truncated: length</code> を持ち
     （<em class="rfc2119">MUST</em>）、取り込めなかった本文のものは
-    <code>WARC-Truncated: unspecified</code> を持たなければなりません
+    <code>WARC-Truncated: unspecified</code> を持ち（<em class="rfc2119">MUST</em>）、
+    隠すシークレットの値を持っていて落とした本文（<code>secret</code>）のものは
+    <code>WARC-Truncated: secret</code> を持たなければなりません
     （<em class="rfc2119">MUST</em>）。WARC ファイルだけを読む読み手が、空の payload を本文と
     取り違えないようにするためです。
   </p>
@@ -346,7 +544,8 @@ encodedDataLength: 4821</pre>
     <code>metadata</code> レコード —— 以下
     <dfn data-lt="record of a withheld request">withheld request のレコード</dfn> —— を
     含まなければなりません（<em class="rfc2119">MUST</em>）。その
-    <code>WARC-Target-URI</code> はリクエストの URL でなければならず
+    <code>WARC-Target-URI</code> はリクエストの URL（<a>隠すシークレット</a>の値は置き換えた形。
+    <a href="#redacted-records"></a> を参照）でなければならず
     （<em class="rfc2119">MUST</em>）、<code>application/warc-fields</code> の本文は次を
     含まなければなりません（<em class="rfc2119">MUST</em>）:
   </p>
@@ -414,7 +613,9 @@ resourceType: XHR</pre>
     <dfn data-lt="record of a window not opened">window not opened のレコード</dfn> —— を
     含まなければなりません（<em class="rfc2119">MUST</em>）。その
     <code>WARC-Target-URI</code> は、そのウィンドウが読み込むはずだった URL を browser が
-    知らせたとおりのものでなければなりません（<em class="rfc2119">MUST</em>）: ページが名指し
+    知らせたとおりのもの（<a>隠すシークレット</a>の値は置き換えた形。
+    <a href="#redacted-records"></a> を参照）でなければなりません
+    （<em class="rfc2119">MUST</em>）: ページが名指し
     しなければ <code>about:blank</code>、form が求めたなら送る本文を除いた action の URL です。
     <code>application/warc-fields</code> の本文は次を含まなければなりません
     （<em class="rfc2119">MUST</em>）:
@@ -495,7 +696,8 @@ target: page</pre>
       <tbody>
         <tr><td><code>WARC-Target-URI</code></td><td>はい</td>
             <td><code>urn:browserhive:snapshot:</code> に続けて、時点、コロン、写しを取った
-            瞬間の文書の URL から fragment を除いたもの。たとえば
+            瞬間の文書の URL から fragment を除いたもの（<a>シークレット</a>の値は置き換えた形。
+            <a href="#snapshot-content"></a> を参照）。たとえば
             <code>urn:browserhive:snapshot:after-load:https://shop.example/</code>。ページは
             History API で、別の文書を読み込まずに文書の URL を変えられるので、その URL は文書を
             読み込んだ URL と同じとは限りません。</td></tr>
@@ -562,7 +764,8 @@ Content-Length: 237
             <code>after-behaviors</code>。</td></tr>
         <tr><td><code>document-uri</code></td><td>はい</td>
             <td>写しを取った瞬間の文書の URL を、ブラウザが持っていたとおりに。fragment も
-            含めます。</td></tr>
+            含めます。<a>シークレット</a>の値は置き換えた形です（<a href="#snapshot-content"></a>
+            を参照）。</td></tr>
         <tr><td><code>document-record</code></td><td>いいえ</td>
             <td>文書を届けた <code>response</code> レコードの <code>WARC-Record-ID</code>
             （山括弧を含めて）。そのレコードは、取り込みの別のファイルにあってもかまいません。
@@ -570,7 +773,8 @@ Content-Length: 237
         <tr><td><code>secrets-replaced</code></td><td>はい</td>
             <td>producer が写しの中で<a>シークレット</a>の値を置き換えた回数を 10 進で
             （<a href="#snapshot-content"></a> を参照）。置き換えなかったときは
-            <code>0</code>。</td></tr>
+            <code>0</code>。<code>document-uri</code> と <code>WARC-Target-URI</code> の中の
+            置き換えは数えません。</td></tr>
       </tbody>
     </table>
     <pre class="text">
@@ -608,7 +812,8 @@ secrets-replaced: 0</pre>
       UTF-8 で符号化したものです。それは producer が作ったもので、サーバのものではなく、読み手は
       それをオリジンが送ったものと取ってはなりません（<em class="rfc2119">MUST NOT</em>）。
       オリジンがその文書について送ったものは、<code>document-record</code> が名指す
-      <code>response</code> レコードにあります。
+      <code>response</code> レコードにあります（そこで<a>隠すシークレット</a>のために producer が
+      置き換えたものや落としたものを除きます）。
     </p>
     <p>
       写しの head の最初の要素は、<code>href</code> 属性が、写しを取った瞬間の文書の base URL
@@ -632,12 +837,11 @@ secrets-replaced: 0</pre>
       （<em class="rfc2119">MUST NOT</em>）。
     </p>
     <p>
-      <dfn data-lt="secret">シークレット</dfn>は、取り込みを求めた側が、behavior に読ませるために
-      秘密として渡した値です（[[BROWSERHIVE-WACZ-PROFILE]]）。写しは、シークレットの値を、
+      写しは、<a>シークレット</a>の値を、隠すものかどうかに関わらず、
       そのままの形でも、HTML の直列化が文字を escape した形（たとえば <code>&amp;</code> を
       <code>&amp;amp;</code> とした形）でも、含んではなりません（<em class="rfc2119">MUST NOT</em>）。
-      producer は現れたところをそれぞれ置き換え、置き換えた回数を <code>secrets-replaced</code>
-      に数えます。
+      producer は、<code>base</code> 要素の <code>href</code> でも写しのほかのところでも、
+      現れたところをそれぞれ置き換え、置き換えた回数を <code>secrets-replaced</code> に数えます。
     </p>
   </section>
 
@@ -669,8 +873,8 @@ secrets-replaced: 0</pre>
           ページと同じモードで描くようにするためです。</li>
       <li>複製の head の先頭に、ページが使っていた文書の base URL を持つ <code>base</code>
           要素を置きます。</li>
-      <li>複製を直列化し、その結果の中のシークレットを、そのままの形と escape した形のどちらも
-          <code>***</code> に置き換えます。</li>
+      <li>複製を直列化し、その結果の中のシークレットを、そのままの形と escape した形のどちらも、
+          隠すシークレットはほかの綴りも、<code>***</code> に置き換えます。</li>
     </ul>
   </section>
 </section>
@@ -678,7 +882,8 @@ secrets-replaced: 0</pre>
 <section id="security-and-privacy-considerations" class="informative">
   <h2>Security and privacy considerations</h2>
   <p>
-    WARC ファイルは wire を渡ったものを持ちます。<code>request</code> レコードはブラウザが
+    WARC ファイルは、本仕様が producer に置き換えさせるものと残させないものを除き、wire を
+    渡ったものを持ちます。<code>request</code> レコードはブラウザが
     送ったヘッダの欄を持ち、そこには cookie や認証の情報が含まれることがあります。
     <code>response</code> レコードはオリジンが返したものを、その中の個人の情報も含めて
     持ちます。
@@ -692,14 +897,52 @@ secrets-replaced: 0</pre>
   <p>
     <a>写し</a>は、そのときのページの文字を持ち、ページのスクリプトと取り込みの
     <a>behavior</a> が欄に入れたものも持ちます: パスワードの欄を除き、どの欄の値も写しに
-    入ります。producer は、そこに見つけた<a>シークレット</a>の値を、そのままの形でも HTML の
-    escape の形でも置き換えますが、ページが変換したシークレット（たとえば URL に符号化した
-    もの）や、誰もシークレットと告げなかったものは見つけません。写しの
+    入ります。producer は、そこに見つけた<a>シークレット</a>の値を、少なくともそのままの形と
+    HTML の escape の形で、<a>隠すシークレット</a>の値は <a href="#redacted-records"></a> が挙げる
+    すべての綴りで置き換えます。それ以外にページが変換したシークレット（たとえばハッシュにしたもの）は
+    残ることがあり、誰もシークレットと告げなかったものも残ることがあります。写しの
     <code>document-uri</code> は文書の URL の fragment を残します。fragment はサーバに送られる
     ことがなく、ログインの手順によっては、ページにトークンを渡すのに使われます。
   </p>
   <p>
-    ファイルを人に渡す者は、これらをすべて渡します。写しが除くものを除けば、本仕様は producer に
+    <a>redacted のレコード</a>は、<a>隠すシークレット</a>の値を、producer が認識できるところで
+    隠します: ブラウザが送ったものとオリジンが返したものの、URL・ヘッダの欄・文字の本文の中と、
+    その値に応えて設定された cookie です。
+    producer は、書き換えられない本文を落とします（<a href="#redacted-records"></a> を参照）。
+    値を置き換えて変わるのはレコードだけで、取り込みの間に起きたことは変わらず、
+    次のものはそのまま残ります:
+  </p>
+  <ul>
+    <li>ページ。behavior は値をページに渡し、ページのスクリプトはそれを読めて、どこへでも送れます。
+        値が送られた先のオリジンは、それを受け取ります。</li>
+    <li>値から作られたもの。producer は、値から計算したハッシュや暗号文、
+        <code>Content-Digest</code> のような HTTP のヘッダの欄の digest を追いません。
+        オリジンがレスポンスの本文で発行した資格（JSON の token など）も追いません。
+        それはシークレットで開けたものを開けるかもしれません。
+        producer が追うのは、producer が見たレスポンスが設定した 8 文字以上の cookie だけです。</li>
+    <li>出現でない綴り。たとえば、ほかの文字符号の本文の中の、非 ASCII の字を持つ値や、
+        より長い base64 の文字列の中の値です。</li>
+    <li>隠すものでないシークレット。取り込みを求めた側が残すことを求めたシークレットの値は、
+        <code>request</code>・<code>response</code>・<code>metadata</code> のレコードに残ります
+        （写しには残りません）。</li>
+    <li>値がそこにあったという事実。<code>BrowserHive-Redacted</code> がどこに何回あったかを述べ、
+        <code>***</code> の周り（form の欄の名前など）も残ります。</li>
+  </ul>
+  <p>
+    置き換えは、シークレットより広く届くこともあります。
+    値に一致する文字は、シークレットと関係があってもなくても置き換えられ、
+    それを持つ、文字の本文でない本文は落とされます。cookie はこれを起こしやすくします:
+    <code>accepted</code> のような値も、シークレットに応えてレスポンスが設定すれば隠すシークレットに
+    数えられ、それを送る後のリクエストが、同じようにほかの値を呼び込むことがあります。
+  </p>
+  <p>
+    本プロファイルを知らない読み手は、<code>***</code> を送られたものとして読みます。
+    redacted のレコードの digest はレコードが持つものと合うので、digest から置き換えは分かりません。
+    レコードから wire を渡ったものを読み取るなら、<code>BrowserHive-Redacted</code> も読む必要があります。
+  </p>
+  <p>
+    ファイルを人に渡す者は、これらをすべて渡します。写しが除くものと、隠すシークレットのために
+    producer が置き換えるものや落とすものを除けば、本仕様は producer に
     そのどれかを取り除くことを求めません。取り込みが何をレコードに残さないかは取り込みの方針が決め、方針は
     ファイルを収めるパッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
   </p>
