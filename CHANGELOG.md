@@ -21,12 +21,12 @@ BrowserHive WARC Profile の版ごとの変更。
 
 - **シークレットと隠すシークレット:** シークレットの定義を、写しの節から新しい節 `redacted-records`
   へ移した。隠すシークレットは、取り込みを求めた側が残すことを求めなかったシークレットで、値は
-  少なくとも 8 文字。それより短い値を、残すことを求めずに渡す要求は、producer が断る。
+  少なくとも 8 文字（UTF-16 の code unit で数える）。それより短い値を、残すことを求めずに渡す要求は、producer が断る。
 - **redacted のレコード:** 認識できた出現（値そのままのほか、URL・form・JSON・HTML・base64 の綴りと、
-  HTTP の Basic 認証の認証情報、base64 の `data:` URL のデータの全体）を、`WARC-Target-URI`・
+  `Authorization`・`Proxy-Authorization` の欄の Basic 認証の認証情報、base64 の `data:` URL のデータの全体）を、`WARC-Target-URI`・
   リクエスト行・HTTP のヘッダの欄の値・文字の本文の中で `***` に置き換える。ファイルのほかのどこにも
   出現を書かない。`WARC-Target-URI` は URI のままにし、置き換えると scheme が無くなるときは元の scheme
-  とコロンを前に書く。
+  とコロンを前に書く。それでも URI にならないときは scheme とコロンと `***` だけを書く。
 - **`BrowserHive-Redacted`:** redacted のレコードが自分で名乗る欄。形は
   `BrowserHive-Redacted: target-uri=1, headers=1, payload=2` で、置き換えが 1 つ以上ある part だけを
   書く。ほかの型のレコードは持たず、この欄の無い `request`・`response` は値を置き換えていない。
