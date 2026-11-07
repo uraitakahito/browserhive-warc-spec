@@ -330,6 +330,8 @@ description: Capture of https://shop.example/</pre>
     <li>値だけを base64 にした形。</li>
     <li>HTTP の Basic 認証の、符号化した認証情報の全体。復号すると値を持つものです。</li>
     <li>base64 の <code>data:</code> URL のデータの全体。復号すると値を持つものです。</li>
+    <li>ヘッダの欄の値の中で、上のどれかの UTF-8 の 1 バイトずつを Latin-1 の 1 文字に読んだ形。
+        UTF-8 で届いた欄をブラウザが報告するときの形です。</li>
   </ul>
   <p>
     producer は、ファイルのほかのどこにも出現を書いてはなりません
@@ -417,8 +419,9 @@ user=alice&amp;password=***&amp;note=***</pre>
     <li><code>text/*</code>。</li>
     <li>JSON: <code>application/json</code> と、<code>+json</code> で終わる型。</li>
     <li>XML: <code>application/xml</code>、<code>application/xhtml+xml</code> と、<code>+xml</code> で終わる型。</li>
-    <li>JavaScript: <code>application/javascript</code> と
-        <code>application/ecmascript</code>。</li>
+    <li>JavaScript: <code>application/javascript</code>・
+        <code>application/ecmascript</code>・<code>application/x-javascript</code>・
+        <code>application/x-ecmascript</code>。</li>
     <li><code>application/x-www-form-urlencoded</code>。</li>
   </ul>
   <p>

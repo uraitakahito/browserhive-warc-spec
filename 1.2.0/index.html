@@ -355,6 +355,9 @@ description: Capture of https://shop.example/</pre>
         hold the value once decoded.</li>
     <li>The whole of the data of a <code>data:</code> URL in base64, which holds
         the value once decoded.</li>
+    <li>In the value of a header field, any of these with each byte of its UTF-8
+        read as one Latin-1 character, which is how a browser reports a field
+        that came in UTF-8.</li>
   </ul>
   <p>
     The producer <em class="rfc2119">MUST NOT</em> write an occurrence anywhere
@@ -449,8 +452,9 @@ user=alice&amp;password=***&amp;note=***</pre>
         <code>+json</code>;</li>
     <li>XML: <code>application/xml</code>, <code>application/xhtml+xml</code>
         and any type ending in <code>+xml</code>;</li>
-    <li>JavaScript: <code>application/javascript</code> and
-        <code>application/ecmascript</code>;</li>
+    <li>JavaScript: <code>application/javascript</code>,
+        <code>application/ecmascript</code>, <code>application/x-javascript</code>
+        and <code>application/x-ecmascript</code>;</li>
     <li><code>application/x-www-form-urlencoded</code>.</li>
   </ul>
   <p>
