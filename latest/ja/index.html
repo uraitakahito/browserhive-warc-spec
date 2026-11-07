@@ -300,7 +300,7 @@ description: Capture of https://shop.example/</pre>
     <dfn data-lt="secret">シークレット</dfn>は、取り込みを求めた側が、
     <a>behavior</a> に読ませるために秘密として渡した値です。
     <dfn data-lt="hidden secret">隠すシークレット</dfn>は、
-    取り込みを求めた側が残すことを求めなかったシークレットです。その値は少なくとも 8 文字です:
+    取り込みを求めた側が残すことを求めなかったシークレットです。その値は少なくとも 8 文字です（UTF-16 の code unit で数えます）:
     producer は、それより短い値を、残すことを求めずに渡す要求を断ります。
     取り込みがどのシークレットを渡され、そのどれを残したかは、
     ファイルを収めるパッケージの <code>settings</code> に記録します
@@ -328,7 +328,8 @@ description: Capture of https://shop.example/</pre>
         アポストロフィを <code>&amp;#39;</code>・<code>&amp;#x27;</code>・
         <code>&amp;apos;</code> のどれかにした形。</li>
     <li>値だけを base64 にした形。</li>
-    <li>HTTP の Basic 認証の、符号化した認証情報の全体。復号すると値を持つものです。</li>
+    <li><code>Authorization</code>・<code>Proxy-Authorization</code> のヘッダの欄の値の中で、
+        HTTP の Basic 認証の、符号化した認証情報の全体。復号すると値を持つものです。</li>
     <li>base64 の <code>data:</code> URL のデータの全体。復号すると値を持つものです。</li>
     <li>ヘッダの欄の値の中で、上のどれかの UTF-8 の 1 バイトずつを Latin-1 の 1 文字に読んだ形。
         UTF-8 で届いた欄をブラウザが報告するときの形です。</li>
@@ -344,6 +345,8 @@ description: Capture of https://shop.example/</pre>
     scheme が無くなるときは、producer は結果の前に元の scheme とコロンを書かなければなりません
     （<em class="rfc2119">MUST</em>）。値が <code>https://shop.example/a</code> のとき、
     URI の <code>https://shop.example/a?b=c</code> は <code>https:***?b=c</code> になります。
+    それでも URI にならないとき（値が port の中から始まるときなど）は、scheme とコロンと
+    <code>***</code> だけを書かなければなりません（<em class="rfc2119">MUST</em>）。
   </p>
   <p>
     出現を持つリクエストへのレスポンスは、シークレットの代わりになる cookie を設定することが
@@ -924,7 +927,8 @@ secrets-replaced: 0</pre>
         より長い base64 の文字列の中の値です。</li>
     <li>隠すものでないシークレット。取り込みを求めた側が残すことを求めたシークレットの値は、
         <code>request</code>・<code>response</code>・<code>metadata</code> のレコードに残ります
-        （写しには残りません）。</li>
+        （写しには残りません）。取り込みを求めた URL が値を持つときは、その URL を書いた
+        <code>warcinfo</code> のレコードの <code>description</code> にも残ります。</li>
     <li>値がそこにあったという事実。<code>BrowserHive-Redacted</code> がどこに何回あったかを述べ、
         <code>***</code> の周り（form の欄の名前など）も残ります。</li>
   </ul>

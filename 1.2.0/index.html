@@ -319,8 +319,8 @@ description: Capture of https://shop.example/</pre>
     A <dfn>secret</dfn> is a value that whoever asked for the capture supplied
     in confidence, for <a data-lt="behavior">behaviors</a> to read. A
     <dfn>hidden secret</dfn> is a secret that whoever asked for the capture did
-    not ask to keep. Its value is at least eight characters long: a producer
-    refuses a request that gives a shorter value without asking to keep it.
+    not ask to keep. Its value is at least eight characters long, counted in UTF-16
+    code units: a producer refuses a request that gives a shorter value without asking to keep it.
     Which secrets a capture was given, and which of them were kept, are recorded
     in the <code>settings</code> of the package that holds the file
     ([[BROWSERHIVE-WACZ-PROFILE]]).
@@ -351,8 +351,10 @@ description: Capture of https://shop.example/</pre>
         <code>&amp;#39;</code>, <code>&amp;#x27;</code> or
         <code>&amp;apos;</code> for an apostrophe.</li>
     <li>The base64 of the value alone.</li>
-    <li>The whole of the encoded credentials of HTTP Basic authentication, which
-        hold the value once decoded.</li>
+    <li>In the value of an <code>Authorization</code> or
+        <code>Proxy-Authorization</code> header field, the whole of the encoded
+        credentials of HTTP Basic authentication, which hold the value once
+        decoded.</li>
     <li>The whole of the data of a <code>data:</code> URL in base64, which holds
         the value once decoded.</li>
     <li>In the value of a header field, any of these with each byte of its UTF-8
@@ -371,6 +373,9 @@ description: Capture of https://shop.example/</pre>
     write that scheme and a colon in front of the result: with the value
     <code>https://shop.example/a</code>, the URI
     <code>https://shop.example/a?b=c</code> becomes <code>https:***?b=c</code>.
+    Where what is left is still not a URI, as when a value begins inside a port,
+    the producer <em class="rfc2119">MUST</em> write only the scheme, a colon and
+    <code>***</code>.
   </p>
   <p>
     A response to a request that held an occurrence may set a cookie that stands
@@ -1010,7 +1015,9 @@ secrets-replaced: 0</pre>
     <li>A secret that is not hidden. The value of a secret that whoever asked for
         the capture asked to keep stays in the <code>request</code>,
         <code>response</code> and <code>metadata</code> records, though not in a
-        snapshot.</li>
+        snapshot. When the URL the capture was asked for holds it, it also stays in
+        the <code>description</code> of a <code>warcinfo</code> record that names
+        that URL.</li>
     <li>The fact that a value was there. <code>BrowserHive-Redacted</code> says
         where and how many times, and what surrounds <code>***</code>, such as
         the name of a form field, stays.</li>
