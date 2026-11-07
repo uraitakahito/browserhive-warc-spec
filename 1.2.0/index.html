@@ -362,6 +362,14 @@ description: Capture of https://shop.example/</pre>
     replaces occurrences in the same way.
   </p>
   <p>
+    A <code>WARC-Target-URI</code> stays a URI, which [[WARC]] requires and which
+    has to have a scheme. Where replacing takes away the scheme of the URI, as it
+    does when a value begins with it, the producer <em class="rfc2119">MUST</em>
+    write that scheme and a colon in front of the result: with the value
+    <code>https://shop.example/a</code>, the URI
+    <code>https://shop.example/a?b=c</code> becomes <code>https:***?b=c</code>.
+  </p>
+  <p>
     A response to a request that held an occurrence may set a cookie that stands
     in for the secret. When the producer observes such a response, and a
     <code>Set-Cookie</code> header field of it sets a cookie whose value is at

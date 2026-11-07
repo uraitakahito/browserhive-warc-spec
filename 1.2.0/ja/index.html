@@ -337,6 +337,13 @@ description: Capture of https://shop.example/</pre>
     ほかのレコードの <code>WARC-Target-URI</code> でも、同じように出現を置き換えます。
   </p>
   <p>
+    <code>WARC-Target-URI</code> は URI のままにします。[[WARC]] が URI を求めており、
+    URI には scheme が要るからです。値が scheme から始まるときなど、置き換えると URI の
+    scheme が無くなるときは、producer は結果の前に元の scheme とコロンを書かなければなりません
+    （<em class="rfc2119">MUST</em>）。値が <code>https://shop.example/a</code> のとき、
+    URI の <code>https://shop.example/a?b=c</code> は <code>https:***?b=c</code> になります。
+  </p>
+  <p>
     出現を持つリクエストへのレスポンスは、シークレットの代わりになる cookie を設定することが
     あります。producer がそのようなレスポンスを見て、その <code>Set-Cookie</code> のヘッダの欄が、
     値の長さが 8 文字以上の cookie を設定しているとき、producer はその値を、

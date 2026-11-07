@@ -25,7 +25,8 @@ BrowserHive WARC Profile の版ごとの変更。
 - **redacted のレコード:** 認識できた出現（値そのままのほか、URL・form・JSON・HTML・base64 の綴りと、
   HTTP の Basic 認証の認証情報、base64 の `data:` URL のデータの全体）を、`WARC-Target-URI`・
   リクエスト行・HTTP のヘッダの欄の値・文字の本文の中で `***` に置き換える。ファイルのほかのどこにも
-  出現を書かない。
+  出現を書かない。`WARC-Target-URI` は URI のままにし、置き換えると scheme が無くなるときは元の scheme
+  とコロンを前に書く。
 - **`BrowserHive-Redacted`:** redacted のレコードが自分で名乗る欄。形は
   `BrowserHive-Redacted: target-uri=1, headers=1, payload=2` で、置き換えが 1 つ以上ある part だけを
   書く。ほかの型のレコードは持たず、この欄の無い `request`・`response` は値を置き換えていない。
