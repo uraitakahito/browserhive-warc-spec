@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.1.0</title>
+<title>BrowserHive WARC Profile 1.2.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -76,7 +76,7 @@
     the WARC records BrowserHive writes. They moved here so that a WARC file can
     name the rules it follows by itself (see <a href="#warcinfo"></a>), and so
     that a file read apart from its package still means what it says.
-    BrowserHive WACZ Profile 1.17.0 requires the WARC files of a package to
+    BrowserHive WACZ Profile 1.22.0 requires the WARC files of a package to
     conform to this version.
   </p>
   <p class="note" title="Not the WARC-Profile field">
@@ -96,8 +96,10 @@
     only while the file is being written.
   </p>
   <p>
-    This profile fixes them. It changes nothing [[WARC]] says. Most of the
-    records it adds are <code>metadata</code> records, which a reader unaware
+    This profile fixes them. It changes nothing [[WARC]] requires, and a
+    <a>redacted record</a>, which holds less than [[WARC]] recommends, says so in
+    its own fields (see Conformance). Most of the records it adds are
+    <code>metadata</code> records, which a reader unaware
     of this profile can pass over. A <a>snapshot</a> is recorded in a
     <code>resource</code> record as well, under a URI of its own, and that
     record is meant for such a reader: one that serves archived pages lists it
@@ -120,6 +122,17 @@
   <p>
     A conforming file is a conforming [[WARC]] file. This specification adds
     requirements. It removes none, and it relaxes none.
+  </p>
+  <p>
+    A <a>redacted record</a> departs from what [[WARC]] says of a record, and
+    says so in its own <code>BrowserHive-Redacted</code> field. [[WARC]] recommends
+    that a <code>request</code> record block contain <q>the full HTTP request sent
+    over the network</q> and a <code>response</code> record block <q>the full
+    HTTP response received over the network</q>; a redacted record holds that
+    message with values replaced. [[WARC]] also has
+    <code>WARC-Target-URI</code> be <q>the original URI</q>; in a redacted
+    record, as in the other records whose URI has a value replaced (see
+    <a href="#redacted-records"></a>), it is that URI with values replaced.
   </p>
   <p>
     Where this specification uses the terms <em class="rfc2119">MUST</em>,
@@ -150,7 +163,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -173,9 +186,9 @@ WARC-Filename: data-000.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/23.0.0
+software: browserhive/29.0.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -251,7 +264,11 @@ description: Capture of https://shop.example/</pre>
     the body in whatever encoding the writer chose &mdash; not the one the origin
     sent, unless the two happen to agree. The requirements in this section keep
     the payload of each record to the bytes that crossed the wire, so that a
-    payload digest vouches for what the origin and the browser sent.
+    payload digest vouches for what the origin and the browser sent. The
+    exception is a <a>redacted record</a> whose
+    <code>BrowserHive-Redacted</code> field names <code>payload</code>: values in
+    its payload were replaced, and its payload digest vouches only for the bytes
+    the record holds.
   </p>
 
   <section id="response-payloads">
@@ -260,7 +277,8 @@ description: Capture of https://shop.example/</pre>
       The payload of a <code>response</code> record that holds a body
       <em class="rfc2119">MUST</em> be the bytes the server sent, with the
       content-coding named in its <code>Content-Encoding</code> removed and
-      nothing else changed. In particular, a producer
+      nothing else changed, except for what a <a>redacted record</a> replaces
+      (see <a href="#redacted-records"></a>). In particular, a producer
       <em class="rfc2119">MUST NOT</em> convert a text body from one character
       encoding to another: a body sent in Shift_JIS is stored as those Shift_JIS
       bytes, and a body whose media type declares no charset is stored as it was
@@ -269,7 +287,8 @@ description: Capture of https://shop.example/</pre>
     <p>
       A <code>data:</code> URL is sent by no server. Its payload is the data the
       URL carries, decoded as the URL defines (base64, or percent-encoding as
-      bytes), and likewise not converted.
+      bytes), and likewise not converted, with the same exception for what a
+      <a>redacted record</a> replaces.
     </p>
     <p>
       A producer that cannot obtain a body as bytes
@@ -285,11 +304,190 @@ description: Capture of https://shop.example/</pre>
     <p>
       The payload of a <code>request</code> record that holds a body
       <em class="rfc2119">MUST</em> be the bytes the browser sent as the request
-      body. A producer that cannot obtain them as bytes
+      body, except for what a <a>redacted record</a> replaces (see
+      <a href="#redacted-records"></a>). A producer that cannot obtain them as
+      bytes
       <em class="rfc2119">MUST NOT</em> store a body rebuilt from decoded text;
       it records the request without one.
     </p>
   </section>
+</section>
+
+<section id="redacted-records">
+  <h2>Redacted records</h2>
+  <p>
+    A <dfn>secret</dfn> is a value that whoever asked for the capture supplied
+    in confidence, for <a data-lt="behavior">behaviors</a> to read. A
+    <dfn>hidden secret</dfn> is a secret that whoever asked for the capture did
+    not ask to keep. Its value is at least eight characters long: a producer
+    refuses a request that gives a shorter value without asking to keep it.
+    Which secrets a capture was given, and which of them were kept, are recorded
+    in the <code>settings</code> of the package that holds the file
+    ([[BROWSERHIVE-WACZ-PROFILE]]).
+  </p>
+  <p>
+    In each <code>request</code> and <code>response</code> record, the producer
+    <em class="rfc2119">MUST</em> replace each occurrence of the value of a
+    hidden secret with the three characters <code>***</code>, in
+    <code>WARC-Target-URI</code>, in the request line, in the values of HTTP
+    header fields and in a <a>text body</a>. A record in which it replaced one is
+    a <dfn>redacted record</dfn>. Where one occurrence contains another, the
+    producer replaces the longer, and each <code>***</code> it writes is one
+    replacement.
+  </p>
+  <p>
+    An occurrence is a form of the value that the producer recognizes: the value
+    as it is, in UTF-8, or one of these spellings of it.
+  </p>
+  <ul>
+    <li>Percent-encoded as <code>encodeURIComponent</code> encodes it, as an
+        <code>application/x-www-form-urlencoded</code> body encodes it, or as a
+        URL's path or query encodes it, with the hexadecimal digits in upper or
+        lower case.</li>
+    <li>In a JSON string, with only the escapes JSON requires.</li>
+    <li>In HTML, with <code>&amp;amp;</code>, <code>&amp;lt;</code>,
+        <code>&amp;gt;</code>, <code>&amp;quot;</code> and
+        <code>&amp;nbsp;</code> for the characters they stand for, and
+        <code>&amp;#39;</code>, <code>&amp;#x27;</code> or
+        <code>&amp;apos;</code> for an apostrophe.</li>
+    <li>The base64 of the value alone.</li>
+    <li>The whole of the encoded credentials of HTTP Basic authentication, which
+        hold the value once decoded.</li>
+    <li>The whole of the data of a <code>data:</code> URL in base64, which holds
+        the value once decoded.</li>
+  </ul>
+  <p>
+    The producer <em class="rfc2119">MUST NOT</em> write an occurrence anywhere
+    else in the file. In the <code>WARC-Target-URI</code> of any other record, it
+    replaces occurrences in the same way.
+  </p>
+  <p>
+    A response to a request that held an occurrence may set a cookie that stands
+    in for the secret. When the producer observes such a response, and a
+    <code>Set-Cookie</code> header field of it sets a cookie whose value is at
+    least eight characters long, the producer <em class="rfc2119">MUST</em> treat
+    that value as the value of a hidden secret from the moment that response
+    arrives, including in the record of that response and in this rule.
+  </p>
+  <p>
+    A redacted record <em class="rfc2119">MUST</em> carry a
+    <code>BrowserHive-Redacted</code> field in its WARC record header, which says
+    where the producer replaced values and how many times:
+  </p>
+  <pre class="text">
+BrowserHive-Redacted: target-uri=1, headers=1, payload=2</pre>
+  <p>
+    The field holds one part for each place in which the producer replaced at
+    least one occurrence, in the order of this table, and no part for any other
+    place:
+  </p>
+  <table class="simple">
+    <thead>
+      <tr><th>Part</th><th>What it counts</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>target-uri</code></td>
+          <td>Replacements in <code>WARC-Target-URI</code>. The request line
+          repeats the same occurrences, and they are not counted again.</td></tr>
+      <tr><td><code>headers</code></td>
+          <td>Replacements in the values of HTTP header fields.</td></tr>
+      <tr><td><code>payload</code></td>
+          <td>Replacements in the body.</td></tr>
+    </tbody>
+  </table>
+  <pre class="text">
+BrowserHive-Redacted = "BrowserHive-Redacted" ":" redacted-part *( "," SP redacted-part )
+redacted-part        = part-name "=" part-count
+part-name            = "target-uri" | "headers" | "payload"
+part-count           = 1*DIGIT   ; in decimal, 1 or more, with no leading zero</pre>
+  <p>
+    [[WARC]] allows a field of this kind: its File and record model section lets
+    extensions define new named fields, and the General part of its Named fields
+    section has software ignore a field whose name it does not recognize. A
+    <code>request</code> or <code>response</code> record without this field
+    <em class="rfc2119">MUST NOT</em> have any value replaced: it holds what the
+    rest of this specification says it holds. A record of any other type
+    <em class="rfc2119">MUST NOT</em> carry this field, even where it has a value
+    replaced in its <code>WARC-Target-URI</code>, and a reader cannot tell
+    <code>***</code> there from the same characters in the URL.
+  </p>
+  <p>
+    In this excerpt of a redacted <code>request</code> record, values of hidden
+    secrets were in the query, in a header field and twice in the form the page
+    posted:
+  </p>
+  <pre class="text">
+WARC-Type: request
+WARC-Target-URI: https://shop.example/login?key=***
+Content-Type: application/http;msgtype=request
+BrowserHive-Redacted: target-uri=1, headers=1, payload=2
+
+POST /login?key=*** HTTP/1.1
+Host: shop.example
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 32
+X-Api-Key: ***
+
+user=alice&amp;password=***&amp;note=***</pre>
+  <p>
+    For the rules of this section, a <dfn>text body</dfn> is a body whose media
+    type is one of these. The media type of a response body is the one the browser
+    determined for it, and that of a request body is the one its
+    <code>Content-Type</code> header field declares.
+  </p>
+  <ul>
+    <li><code>text/*</code>;</li>
+    <li>JSON: <code>application/json</code> and any type ending in
+        <code>+json</code>;</li>
+    <li>XML: <code>application/xml</code>, <code>application/xhtml+xml</code>
+        and any type ending in <code>+xml</code>;</li>
+    <li>JavaScript: <code>application/javascript</code> and
+        <code>application/ecmascript</code>;</li>
+    <li><code>application/x-www-form-urlencoded</code>.</li>
+  </ul>
+  <p>
+    When a body that is not a text body holds an occurrence, the producer
+    <em class="rfc2119">MUST NOT</em> replace inside it: a change in its length
+    would break it. The producer records the message without that body, and the
+    record <em class="rfc2119">MUST</em> carry
+    <code>WARC-Truncated: secret</code>; the WARC-Truncated section of [[WARC]]
+    allows extensions to define other reasons. A <code>response</code> recorded
+    this way also has a <a>record of a body not kept</a> whose
+    <code>truncated</code> is <code>secret</code>. A record of that kind describes
+    only a response, so a <code>request</code> has
+    <code>WARC-Truncated: secret</code> alone. Dropping a body replaces nothing, so
+    it counts in no part of <code>BrowserHive-Redacted</code>: a record in which
+    nothing else was replaced carries <code>WARC-Truncated</code> and not
+    <code>BrowserHive-Redacted</code>.
+  </p>
+  <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Record-ID: &lt;urn:uuid:a41d7e20-9b3c-4f15-8e62-5c0a7d3b1f94&gt;
+WARC-Target-URI: https://shop.example/export?key=***
+WARC-Date: 2026-11-07T02:14:31.882Z
+WARC-Refers-To: &lt;urn:uuid:7c2e4b19-3f6a-4d08-8a51-2b9d0e6f1c37&gt;
+Content-Type: application/warc-fields
+Content-Length: 44
+
+truncated: secret
+encodedDataLength: 4821</pre>
+  <p>
+    In a redacted record, and in a record from which the producer dropped a body,
+    <code>Content-Length</code>, <code>WARC-Block-Digest</code> and
+    <code>WARC-Payload-Digest</code>, and the <code>Content-Length</code> header
+    field of the HTTP message if it has one, <em class="rfc2119">MUST</em>
+    describe the bytes the record holds. The producer
+    <em class="rfc2119">MUST NOT</em> write, in either digest field, a digest of
+    the bytes before replacement or of the dropped body: with the bytes the record
+    holds, such a digest would let a reader test guesses of the value.
+  </p>
+  <p>
+    A value made from a secret, such as a hash or a ciphertext, is not an
+    occurrence, and neither is a credential an origin newly issues in a response
+    body, such as a token in JSON. This specification does not claim that a file
+    holds none of them.
+  </p>
 </section>
 
 <section id="records-of-bodies-not-kept">
@@ -302,7 +500,9 @@ description: Capture of https://shop.example/</pre>
     <em class="rfc2119">MUST</em> also hold a <code>metadata</code> record,
     hereafter a <dfn>record of a body not kept</dfn>. Its
     <code>WARC-Target-URI</code> <em class="rfc2119">MUST</em> be the URL of the
-    response, its <code>WARC-Refers-To</code> <em class="rfc2119">MUST</em> be
+    response, with the value of any <a>hidden secret</a> replaced (see
+    <a href="#redacted-records"></a>), its <code>WARC-Refers-To</code>
+    <em class="rfc2119">MUST</em> be
     the <code>WARC-Record-ID</code> of the <code>response</code> record, and its
     <code>application/warc-fields</code> body <em class="rfc2119">MUST</em>
     contain:
@@ -332,6 +532,9 @@ description: Capture of https://shop.example/</pre>
     <li><code>not-intercepted</code> &mdash; the body crossed the wire, but the
         producer could not obtain it as bytes (see
         <a href="#response-payloads"></a>).</li>
+    <li><code>secret</code> &mdash; the body was not a <a>text body</a> and held
+        the value of a <a>hidden secret</a> (see
+        <a href="#redacted-records"></a>).</li>
   </ul>
   <pre class="text">
 WARC/1.1
@@ -347,9 +550,12 @@ encodedDataLength: 4821</pre>
   <p>
     The <code>response</code> record of a body dropped at a size limit
     (<code>too-large</code> or <code>task-cap</code>)
-    <em class="rfc2119">MUST</em> carry <code>WARC-Truncated: length</code>, and
+    <em class="rfc2119">MUST</em> carry <code>WARC-Truncated: length</code>,
     that of a body that was not intercepted <em class="rfc2119">MUST</em> carry
-    <code>WARC-Truncated: unspecified</code>, so that a reader of the WARC file
+    <code>WARC-Truncated: unspecified</code>, and that of a body dropped for
+    holding the value of a hidden secret (<code>secret</code>)
+    <em class="rfc2119">MUST</em> carry
+    <code>WARC-Truncated: secret</code>, so that a reader of the WARC file
     alone does not take the empty payload for the body.
   </p>
   <p class="note">
@@ -367,7 +573,9 @@ encodedDataLength: 4821</pre>
     capture <em class="rfc2119">MUST</em> contain a <code>metadata</code> record,
     hereafter a <dfn>record of a withheld request</dfn>. Its
     <code>WARC-Target-URI</code> <em class="rfc2119">MUST</em> be the request
-    URL, and its <code>application/warc-fields</code> body
+    URL, with the value of any <a>hidden secret</a> replaced (see
+    <a href="#redacted-records"></a>), and its
+    <code>application/warc-fields</code> body
     <em class="rfc2119">MUST</em> contain:
   </p>
   <table class="simple">
@@ -439,8 +647,10 @@ resourceType: XHR</pre>
     <code>metadata</code> record, hereafter a <dfn>record of a window not
     opened</dfn>. Its <code>WARC-Target-URI</code>
     <em class="rfc2119">MUST</em> be the URL the window would have loaded, as the
-    browser reported it: <code>about:blank</code> when the page named none, and
-    the action URL, without the submitted body, when a form asked. Its
+    browser reported it, with the value of any <a>hidden secret</a> replaced (see
+    <a href="#redacted-records"></a>): <code>about:blank</code> when the page
+    named none, and the action URL, without the submitted body, when a form
+    asked. Its
     <code>application/warc-fields</code> body <em class="rfc2119">MUST</em>
     contain:
   </p>
@@ -529,7 +739,8 @@ target: page</pre>
         <tr><td><code>WARC-Target-URI</code></td><td>yes</td>
             <td><code>urn:browserhive:snapshot:</code>, then the stage, a
             colon, and the URL of the document at the moment of the snapshot
-            without its fragment: for instance
+            without its fragment, with the value of any <a>secret</a> replaced
+            (see <a href="#snapshot-content"></a>): for instance
             <code>urn:browserhive:snapshot:after-load:https://shop.example/</code>.
             A page can change the URL of its document through the History API
             without loading another document, so the URL need not be the one
@@ -602,7 +813,8 @@ Content-Length: 237
             <code>after-load</code> or <code>after-behaviors</code>.</td></tr>
         <tr><td><code>document-uri</code></td><td>yes</td>
             <td>The URL of the document at the moment of the snapshot, as the
-            browser held it, fragment included.</td></tr>
+            browser held it, fragment included, with the value of any
+            <a>secret</a> replaced (see <a href="#snapshot-content"></a>).</td></tr>
         <tr><td><code>document-record</code></td><td>no</td>
             <td>The <code>WARC-Record-ID</code> of the <code>response</code>
             record that delivered the document, angle brackets included. That
@@ -612,7 +824,8 @@ Content-Length: 237
             <td>How many times the producer replaced the value of a
             <a>secret</a> in the copy, in decimal (see
             <a href="#snapshot-content"></a>). <code>0</code> when it replaced
-            none.</td></tr>
+            none. A replacement in <code>document-uri</code> or
+            <code>WARC-Target-URI</code> is not counted.</td></tr>
       </tbody>
     </table>
     <pre class="text">
@@ -653,7 +866,8 @@ secrets-replaced: 0</pre>
       producer's work and not a server's, and a reader
       <em class="rfc2119">MUST NOT</em> take it for what an origin sent. What
       the origin sent for the document is in the <code>response</code> record
-      that <code>document-record</code> names.
+      that <code>document-record</code> names, apart from what the producer
+      replaced or dropped there for a <a>hidden secret</a>.
     </p>
     <p>
       The first element in the head of a snapshot
@@ -680,14 +894,13 @@ secrets-replaced: 0</pre>
       <code>value</code> attribute, whatever the field held.
     </p>
     <p>
-      A <dfn>secret</dfn> is a value that whoever asked for the capture
-      supplied in confidence, for behaviors to read
-      ([[BROWSERHIVE-WACZ-PROFILE]]). A snapshot
-      <em class="rfc2119">MUST NOT</em> contain the value of a secret, neither
-      as it is nor with its characters escaped as the HTML serialization
-      escapes them (<code>&amp;</code> as <code>&amp;amp;</code>, for
-      instance). The producer replaces each occurrence and counts the
-      replacements in <code>secrets-replaced</code>.
+      A snapshot <em class="rfc2119">MUST NOT</em> contain the value of a
+      <a>secret</a>, hidden or not, neither as it is nor with its characters
+      escaped as the HTML serialization escapes them (<code>&amp;</code> as
+      <code>&amp;amp;</code>, for instance). The producer replaces each
+      occurrence, in the <code>href</code> of the <code>base</code> element as
+      anywhere else in the copy, and counts the replacements in
+      <code>secrets-replaced</code>.
     </p>
   </section>
 
@@ -726,7 +939,8 @@ secrets-replaced: 0</pre>
       <li>Put the <code>base</code> element first in the head of the copy,
           with the document base URL the page used.</li>
       <li>Serialize the copy, then replace each secret in the result, as it is
-          and escaped, with <code>***</code>.</li>
+          and escaped, and each hidden secret in its other spellings too, with
+          <code>***</code>.</li>
     </ul>
   </section>
 </section>
@@ -734,7 +948,8 @@ secrets-replaced: 0</pre>
 <section id="security-and-privacy-considerations" class="informative">
   <h2>Security and privacy considerations</h2>
   <p>
-    A WARC file holds what crossed the wire. Its <code>request</code> records
+    A WARC file holds what crossed the wire, apart from what this specification
+    has the producer replace or leave out. Its <code>request</code> records
     hold the header fields the browser sent, which may include cookies and
     credentials, and its <code>response</code> records hold what the origins
     returned, including any personal data in it.
@@ -751,17 +966,62 @@ secrets-replaced: 0</pre>
     page's scripts and the capture's <a data-lt="behavior">behaviors</a> had
     put into its fields: the value of every field but a password field is in
     the copy. The producer replaces the values of
-    <a data-lt="secret">secrets</a> it finds there, as they are or escaped as
-    HTML escapes them, but it does not find a secret the page had transformed,
-    for instance by encoding it into a URL, nor anything nobody declared a
-    secret. The <code>document-uri</code> of a snapshot keeps the fragment of
+    <a data-lt="secret">secrets</a> it finds there, at least as they are and as
+    HTML escapes them, and those of <a data-lt="hidden secret">hidden secrets</a>
+    in every spelling <a href="#redacted-records"></a> lists. A secret the page had
+    transformed otherwise may stay, for instance one hashed, and so may anything
+    nobody declared a secret. The <code>document-uri</code> of a snapshot keeps the fragment of
     the document's URL, which is never sent to a server and which some sign-in
     flows use to hand a token to the page.
   </p>
   <p>
+    A <a>redacted record</a> hides the value of a <a>hidden secret</a> where the
+    producer recognizes it: in what the browser sent and what the origins
+    returned, in URLs, header fields and text bodies, and in a cookie set in
+    answer to it. The producer drops a body it cannot edit (see
+    <a href="#redacted-records"></a>). Replacing a value changes the records and
+    nothing that happened in the capture, and these stay as they were:
+  </p>
+  <ul>
+    <li>The page. A behavior hands the value to the page, where the page's
+        scripts can read it and send it anywhere, and the origins it is sent to
+        receive it.</li>
+    <li>What is made from the value. The producer does not follow a hash or a
+        ciphertext computed from it, a digest in an HTTP header field such as
+        <code>Content-Digest</code>, or a credential an origin issues in a
+        response body, such as a token in JSON, which may open what the secret
+        opened. A cookie of at least eight characters, set in a response the
+        producer observes, is the only thing it follows.</li>
+    <li>A spelling that is not an occurrence, such as a value with non-ASCII
+        characters in a body in another character encoding, or the value inside a
+        longer base64 string.</li>
+    <li>A secret that is not hidden. The value of a secret that whoever asked for
+        the capture asked to keep stays in the <code>request</code>,
+        <code>response</code> and <code>metadata</code> records, though not in a
+        snapshot.</li>
+    <li>The fact that a value was there. <code>BrowserHive-Redacted</code> says
+        where and how many times, and what surrounds <code>***</code>, such as
+        the name of a form field, stays.</li>
+  </ul>
+  <p>
+    Replacing can also reach further than the secret. Any text that matches a
+    value is replaced, and a body that is not a text body and holds it is dropped,
+    whether or not the text has anything to do with the secret. A cookie makes this
+    more likely: a value such as <code>accepted</code> counts as a hidden secret
+    once a response has set it in answer to one, and a later request that sends it
+    can bring in others the same way.
+  </p>
+  <p>
+    A reader unaware of this profile sees <code>***</code> as what was sent, and
+    the digests of a redacted record match what it holds, so a digest does not
+    show the replacement. Whoever relies on a record for what crossed the wire
+    needs to read <code>BrowserHive-Redacted</code> as well.
+  </p>
+  <p>
     Whoever passes a file on passes all of this on. Beyond what a snapshot
-    leaves out, this specification does not ask the producer to remove any of
-    it. What a capture keeps out of its
+    leaves out, and what the producer replaces or drops for a hidden secret, this
+    specification does not ask the producer to remove any of it. What a capture
+    keeps out of its
     records is decided by the policies of the capture, which the package that
     holds the file records ([[BROWSERHIVE-WACZ-PROFILE]]).
   </p>

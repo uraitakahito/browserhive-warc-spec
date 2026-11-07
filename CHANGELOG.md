@@ -8,10 +8,49 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.2.0](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 2026-11-07 | 隠すシークレットの値を、`request`・`response` のレコードの中で `***` に置き換える |
 | [1.1.0](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | 2026-11-02 | 写し（取り込みの時点ごとの文書の DOM）を `resource` と `metadata` の組で足す |
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
 
 ---
+
+## 1.2.0
+
+隠すシークレットの値を、`request` と `response` のレコードの中で `***` に置き換えるようにした。
+置き換えはレコードの数も型も変えない。文字でない本文を落とすときだけ、body not kept のレコードが増える。
+
+- **シークレットと隠すシークレット:** シークレットの定義を、写しの節から新しい節 `redacted-records`
+  へ移した。隠すシークレットは、取り込みを求めた側が残すことを求めなかったシークレットで、値は
+  少なくとも 8 文字。それより短い値を、残すことを求めずに渡す要求は、producer が断る。
+- **redacted のレコード:** 認識できた出現（値そのままのほか、URL・form・JSON・HTML・base64 の綴りと、
+  HTTP の Basic 認証の認証情報、base64 の `data:` URL のデータの全体）を、`WARC-Target-URI`・
+  リクエスト行・HTTP のヘッダの欄の値・文字の本文の中で `***` に置き換える。ファイルのほかのどこにも
+  出現を書かない。
+- **`BrowserHive-Redacted`:** redacted のレコードが自分で名乗る欄。形は
+  `BrowserHive-Redacted: target-uri=1, headers=1, payload=2` で、置き換えが 1 つ以上ある part だけを
+  書く。ほかの型のレコードは持たず、この欄の無い `request`・`response` は値を置き換えていない。
+- **digest と長さ:** redacted のレコードと本文を落としたレコードの `Content-Length`・
+  `WARC-Block-Digest`・`WARC-Payload-Digest`（HTTP の `Content-Length` も）は、レコードが持っている
+  バイト列を述べる。置き換える前のバイト列や落とした本文の digest は書かない（持っているバイト列と
+  合わせると、値の候補を試せてしまう）。
+- **文字でない本文:** 中を置き換えず、本文なしで記録して `WARC-Truncated: secret` を書く。`response` は
+  body not kept のレコードの `truncated: secret` も持つ。文字の本文は `text/*`・JSON・XML・JavaScript・
+  `application/x-www-form-urlencoded`。
+- **Cookie:** 隠すシークレットの値を載せた要求への応答が返した `Set-Cookie` の値（8 文字以上）は、
+  その応答が届いた瞬間から、隠すシークレットの値として扱う。
+- **追わないもの:** 値から作ったもの（ハッシュ・暗号文）と、応答の本文で新しく発行された資格（JSON の
+  token）は出現ではない。この仕様は、それらが無いことを主張しない。
+- **直した節:** Conformance と Introduction（redacted のレコードが WARC 1.1 の勧告から外れ、
+  `WARC-Target-URI` も値を置き換えた形になること）・Payloads（redacted のレコードを除く）・
+  Records of bodies not kept（`truncated` に `secret`）・Security。Exchanges は変えない。
+- **metadata の URL:** body not kept・withheld request・window not opened のレコードの
+  `WARC-Target-URI` は、隠すシークレットの値を置き換えた形。これらのレコードは `BrowserHive-Redacted` を
+  持たないので、読み手はそこの `***` と URL の中の同じ字とを区別できない。
+- **写しの URL（1.1.0 の記述の訂正）:** 写しの `document-uri`・`WARC-Target-URI`・`base` の `href` は、
+  シークレットの値を置き換えた形。BrowserHive は 1.1.0 からこの形で書いていて、1.1.0 の文
+  （"as the browser held it"）が実物と違っていた。`secrets-replaced` は写しの中の置き換えだけを数える。
+- **写しの中のシークレット:** 隠すものかどうかに関わらず、そのままの形と HTML の escape の形を持たない
+  と明記した。隠すシークレットは、ほかの綴りも持たない。
 
 ## 1.1.0
 

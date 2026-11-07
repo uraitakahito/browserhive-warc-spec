@@ -24,6 +24,8 @@ jobs:
           - 1.0.0/ja
           - 1.1.0
           - 1.1.0/ja
+          - 1.2.0
+          - 1.2.0/ja
     steps:
       - uses: actions/checkout@v4
 
@@ -70,6 +72,7 @@ jobs:
           FAIL=0
           for doc in 1.0.0/index.html 1.0.0/ja/index.html \
                      1.1.0/index.html 1.1.0/ja/index.html \
+                     1.2.0/index.html 1.2.0/ja/index.html \
                      latest/index.html latest/ja/index.html; do
             src=$(grep -o 'src="[^"]*respec[^"]*"' "$doc" | sed 's/src="//; s/"$//')
             if [ -z "$src" ]; then
