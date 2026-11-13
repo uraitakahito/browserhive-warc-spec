@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.2.0</title>
+<title>BrowserHive WARC Profile 1.3.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -76,7 +76,7 @@
     the WARC records BrowserHive writes. They moved here so that a WARC file can
     name the rules it follows by itself (see <a href="#warcinfo"></a>), and so
     that a file read apart from its package still means what it says.
-    BrowserHive WACZ Profile 1.22.0 requires the WARC files of a package to
+    BrowserHive WACZ Profile 1.24.0 requires the WARC files of a package to
     conform to this version.
   </p>
   <p class="note" title="Not the WARC-Profile field">
@@ -104,7 +104,9 @@
     <code>resource</code> record as well, under a URI of its own, and that
     record is meant for such a reader: one that serves archived pages lists it
     and serves it like a page it holds, showing the page as it stood when the
-    snapshot was taken.
+    snapshot was taken. A <a>screenshot</a> is recorded the same way: its
+    <code>resource</code> record holds an image, which such a reader can show
+    under the screenshot's own URI.
   </p>
   <p>
     BrowserHive writes its WARC files into a WACZ package, whose rules are in
@@ -163,7 +165,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -186,9 +188,9 @@ WARC-Filename: data-000.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/29.0.0
+software: browserhive/30.2.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -208,7 +210,8 @@ description: Capture of https://shop.example/</pre>
     written whole into one file, and the producer writes no
     <code>continuation</code> records. The records of one <a>exchange</a>
     <em class="rfc2119">MUST</em> be in the same file, and so
-    <em class="rfc2119">MUST</em> the two records of one <a>snapshot</a>.
+    <em class="rfc2119">MUST</em> the two records of one <a>snapshot</a> and
+    the two records of one <a>screenshot</a>.
   </p>
   <p class="note">
     A capture may write more than one file. How those files are named, and when
@@ -603,8 +606,8 @@ encodedDataLength: 4821</pre>
       <tr><td><code>action</code></td><td>yes</td>
           <td>What the producer did. <code>deny</code>: it did not send the
           request, so nothing left the capturing machine for that URL.
-          <code>no-archive</code>: it let the request go and the origin answered,
-          but it kept nothing of the exchange beyond this record. This is the
+          <code>no-archive</code>: it let the request go, and kept nothing of
+          the exchange beyond this record. This is the
           field that says whether the request was sent.</td></tr>
       <tr><td><code>pattern</code></td><td>yes</td>
           <td>The pattern that matched, spelled exactly as the producer's policy
@@ -962,6 +965,284 @@ secrets-replaced: 0</pre>
   </section>
 </section>
 
+<section id="screenshots">
+  <h2>Screenshots</h2>
+  <p>
+    A <dfn>screenshot</dfn> is an image of what the browser showed of the page
+    in its viewport at one moment of the capture. The producer takes it from
+    the page as the browser had drawn it by then, with whatever the page's
+    scripts and the capture's <a data-lt="behavior">behaviors</a> had changed
+    on it, and not from anything an origin sent. This version describes the
+    screenshots taken at these stages:
+  </p>
+  <ul>
+    <li><code>after-load</code> &mdash; the page has loaded and settled, and no
+        <a>behavior</a> has run on it.</li>
+    <li><code>after-behaviors</code> &mdash; the behaviors the capture ran on
+        the page have finished.</li>
+  </ul>
+  <p>
+    These are the stages of a <a>snapshot</a>, under the same names. A
+    capture keeps at most one screenshot of each stage, and none of
+    <code>after-behaviors</code> unless it ran a behavior. It need not keep
+    any. Which stages
+    a capture kept a screenshot of, and why it kept none of a stage, are
+    recorded by the package that holds the file
+    ([[BROWSERHIVE-WACZ-PROFILE]]).
+  </p>
+  <p>
+    The producer records a screenshot as two records, written together: a
+    <code>resource</code> record that holds the image, and a
+    <code>metadata</code> record that says what the image is. The
+    <code>metadata</code> record names the <code>resource</code> record in
+    <code>WARC-Refers-To</code>, and the two records
+    <em class="rfc2119">MUST NOT</em> carry <code>WARC-Concurrent-To</code>. A
+    screenshot is not part of an <a>exchange</a>, and [[WARC]] gives the
+    records that field links one date, which a screenshot does not share with
+    the exchange that loaded its document.
+  </p>
+
+  <section id="screenshot-resource-records">
+    <h3>The <code>resource</code> record</h3>
+    <p>
+      The <code>resource</code> record of a screenshot holds the image as its
+      block, and <em class="rfc2119">MUST</em> carry these header fields:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>WARC-Target-URI</code></td><td>yes</td>
+            <td><code>urn:browserhive:screenshot:</code>, then the stage, a
+            colon, and the URL of the document in the page's main frame at the
+            moment of the screenshot without its fragment, with the value of
+            any <a>secret</a> replaced as it is in the URI of a snapshot (see
+            <a href="#snapshot-resource-records"></a>): for instance
+            <code>urn:browserhive:screenshot:after-load:https://shop.example/</code>.
+            As there, the URL need not be the one the document was loaded
+            from.</td></tr>
+        <tr><td><code>WARC-Date</code></td><td>yes</td>
+            <td>The moment the producer took the screenshot.</td></tr>
+        <tr><td><code>Content-Type</code></td><td>yes</td>
+            <td><code>image/webp</code>.</td></tr>
+        <tr><td><code>WARC-Block-Digest</code></td><td>yes</td>
+            <td>The digest of the block.</td></tr>
+        <tr><td><code>WARC-Payload-Digest</code></td><td>yes</td>
+            <td>The digest of the payload. For a <code>resource</code> record
+            the payload is the block [[WARC]], so this digest is computed over
+            the same bytes.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      This excerpt is the header of such a record. Its block, the image, is
+      not shown:
+    </p>
+    <pre class="text">
+WARC-Type: resource
+WARC-Record-ID: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
+WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.512Z
+Content-Type: image/webp
+WARC-Block-Digest: sha256:22EW7ABMRNGE576GNNPFAU3XI6356UR7XGOFKREPIXIPOJTPDSLA
+WARC-Payload-Digest: sha256:22EW7ABMRNGE576GNNPFAU3XI6356UR7XGOFKREPIXIPOJTPDSLA
+Content-Length: 18764</pre>
+    <p>
+      This is the page of the example in
+      <a href="#snapshot-resource-records"></a>, at the same stage. A
+      snapshot and a screenshot of the same stage are taken separately, and
+      each carries the moment it was itself taken: their dates need not be
+      equal.
+    </p>
+    <p class="note" title="Why a URI of its own">
+      A screenshot is an artefact of the capture, as a snapshot is, and
+      [[WARC]] offers a synthesized target URI for such artefacts. Under a URI
+      of its own, no reader takes the image for something an origin returned
+      for the document's URL, and the stage in the URI keeps the screenshots
+      of one document apart from each other and from its snapshots.
+    </p>
+  </section>
+
+  <section id="screenshot-metadata-records">
+    <h3>The <code>metadata</code> record</h3>
+    <p>
+      The <code>metadata</code> record of a screenshot says what the image is.
+      Its <code>WARC-Refers-To</code> <em class="rfc2119">MUST</em> be the
+      <code>WARC-Record-ID</code> of the screenshot's <code>resource</code>
+      record, its <code>WARC-Target-URI</code> and <code>WARC-Date</code>
+      <em class="rfc2119">MUST</em> be those of that record, and its
+      <code>application/warc-fields</code> body <em class="rfc2119">MUST</em>
+      contain:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>Required</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>screenshot</code></td><td>yes</td>
+            <td>The stage at which the producer took the screenshot:
+            <code>after-load</code> or <code>after-behaviors</code>.</td></tr>
+        <tr><td><code>document-uri</code></td><td>yes</td>
+            <td>The URL of the document in the page's main frame at the moment
+            of the screenshot, as the browser held it, fragment included, with
+            the value of any <a>secret</a> replaced as it is in the
+            <code>document-uri</code> of a snapshot (see
+            <a href="#snapshot-metadata-records"></a>).</td></tr>
+        <tr><td><code>document-record</code></td><td>no</td>
+            <td>The <code>WARC-Record-ID</code> of the <code>response</code>
+            record that delivered that document, angle brackets included. That
+            record may be in another file of the capture. Absent when the
+            capture holds no such record.</td></tr>
+        <tr><td><code>viewport</code></td><td>yes</td>
+            <td>The width and the height of the page's viewport at the moment
+            of the screenshot: of the area in which the browser laid the page
+            out and showed it, scrollbars included. In CSS pixels, each in
+            decimal, with an <code>x</code> between them:
+            <code>1280x800</code>.</td></tr>
+        <tr><td><code>device-pixel-ratio</code></td><td>yes</td>
+            <td>The device pixel ratio of the page at the moment of the
+            screenshot, in decimal: <code>1</code>, <code>2</code> or
+            <code>1.5</code>, for instance. It says for which density of
+            display the page was drawn, and is not the scale of the image (see
+            <a href="#screenshot-content"></a>).</td></tr>
+        <tr><td><code>image-size</code></td><td>yes</td>
+            <td>The width and the height of the image in the block, in pixels,
+            written as <code>viewport</code> is. The value
+            <em class="rfc2119">MUST</em> be the width and the height the
+            image itself has, so that a reader can check the field against
+            the block.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      The fields <code>viewport</code>, <code>image-size</code> and
+      <code>device-pixel-ratio</code> are written in this form:
+    </p>
+    <pre class="text">
+viewport           = "viewport" ":" size
+image-size         = "image-size" ":" size
+device-pixel-ratio = "device-pixel-ratio" ":" ratio
+size               = count "x" count   ; width, x, height; the x is lowercase only
+count              = nonzero *DIGIT    ; in decimal, 1 or more, with no leading zero
+ratio              = ( nonzero *DIGIT [ "." *DIGIT nonzero ] ) | ( "0" "." *DIGIT nonzero )
+                     ; in decimal, more than 0, with no exponent and no zero that
+                     ; could be left out: 2, not 2.0
+nonzero            = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</pre>
+    <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Record-ID: &lt;urn:uuid:0d661333-78a5-4d57-9856-269ae8507e29&gt;
+WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.512Z
+WARC-Refers-To: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
+Content-Type: application/warc-fields
+Content-Length: 204
+
+screenshot: after-behaviors
+document-uri: https://shop.example/results
+document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
+viewport: 1280x800
+device-pixel-ratio: 2
+image-size: 1280x800</pre>
+    <p>
+      In the example, the page was drawn for a device pixel ratio of 2, and
+      the image measures in pixels what the viewport measures in CSS pixels:
+      in this screenshot, one pixel of the image stands for one CSS pixel.
+      <code>document-record</code> names the <code>response</code> record that
+      the snapshot of this stage names in
+      <a href="#snapshot-metadata-records"></a>.
+    </p>
+    <p>
+      The two records of a screenshot agree. The value of
+      <code>screenshot</code> <em class="rfc2119">MUST</em> be the stage in
+      <code>WARC-Target-URI</code>, and the URL in
+      <code>WARC-Target-URI</code> <em class="rfc2119">MUST</em> be
+      <code>document-uri</code> without its fragment. For each
+      <code>resource</code> record whose <code>WARC-Target-URI</code> begins
+      with <code>urn:browserhive:screenshot:</code>, there
+      <em class="rfc2119">MUST</em> be exactly one <code>metadata</code>
+      record, as this section describes it, that names that record in
+      <code>WARC-Refers-To</code>.
+    </p>
+    <p>
+      The body <em class="rfc2119">MUST NOT</em> carry <code>action</code>,
+      <code>truncated</code>, <code>window</code> or <code>snapshot</code>,
+      and a reader <em class="rfc2119">MUST NOT</em> count the record as a
+      <a>record of a withheld request</a>, a <a>record of a body not kept</a>,
+      a <a>record of a window not opened</a> or the <code>metadata</code>
+      record of a <a>snapshot</a>. The record carries no
+      <code>WARC-Payload-Digest</code>, which [[WARC]] allows only on a record
+      with a well-defined payload.
+    </p>
+    <p>
+      The values of <code>screenshot</code> are not a closed set. This version
+      defines the stages listed above and no other value, and a later version
+      may define values for screenshots that are not taken at a stage. A file
+      that conforms to this version carries only the two values above. Where
+      a <code>metadata</code> record carries a <code>screenshot</code> value
+      that a reader does not know, the reader
+      <em class="rfc2119">MUST NOT</em> treat the image that record describes
+      as a screenshot of a stage.
+    </p>
+  </section>
+
+  <section id="screenshot-content">
+    <h3>What a screenshot holds</h3>
+    <p>
+      The block of a screenshot's <code>resource</code> record
+      <em class="rfc2119">MUST</em> be a still image in the WebP format: what the
+      browser had drawn of the page in its viewport at the moment of the
+      screenshot. It shows the document in the page's main frame with
+      everything the page had drawn into it, such as its images and the
+      documents of its frames, those from other sites included. It is the
+      browser's work and not an origin's, and a reader
+      <em class="rfc2119">MUST NOT</em> take it for what an origin sent.
+    </p>
+    <p>
+      The image <em class="rfc2119">MUST</em> show the viewport and nothing
+      beyond it: it does not reach the parts of the page that come into view
+      only by scrolling. The width of the image is therefore to its height as
+      the width of the viewport is to its height, apart from rounding to whole
+      pixels. A page lays out, and often fetches, what lies beyond
+      its viewport only when that comes into view, and an image of the whole
+      page would have the browser do so for the sake of the image.
+    </p>
+    <p>
+      The size of the image does not follow from the size of the viewport.
+      One pixel of the image need not be one CSS pixel, and
+      <code>device-pixel-ratio</code> does not say how many it is: that field
+      gives the density for which the page was drawn, so that at a ratio of 2
+      the image shows the images the page chose for a dense display, whatever
+      the size of the image itself. The scale of the image is the ratio of
+      <code>image-size</code> to <code>viewport</code>.
+    </p>
+    <p>
+      The producer replaces nothing in the image. A value the page showed is
+      in it, the value of a <a>secret</a> included: an occurrence, as
+      <a href="#redacted-records"></a> defines it, is a spelling of a value in
+      characters and bytes, and the pixels of an image are not one.
+    </p>
+    <p>
+      The image <em class="rfc2119">MUST</em> show the page at the viewport
+      size, the device pixel ratio and the scroll position the page had when
+      the producer began to take the screenshot. A producer that changes
+      any of these for the sake of the image has the page do something, even
+      if it sets them back once it has the image, and what the page did then
+      stays in the records that follow: a capture goes on after a screenshot,
+      behaviors run, and the producer records further exchanges, snapshots and
+      screenshots. So the producer takes the image without changing any of
+      them, which leaves it nothing to set back once it has the image. What
+      the page or a behavior changes of them by itself, while the image is
+      taken or later, is no part of this rule.
+    </p>
+    <p class="note" title="Why one image format">
+      With one format, a reader needs one decoder to show any screenshot, and
+      can tell from the first bytes of a block that it holds what its
+      <code>Content-Type</code> says. WebP keeps the image of a viewport small
+      beside the bodies a capture keeps.
+    </p>
+  </section>
+</section>
+
 <section id="security-and-privacy-considerations" class="informative">
   <h2>Security and privacy considerations</h2>
   <p>
@@ -992,6 +1273,28 @@ secrets-replaced: 0</pre>
     flows use to hand a token to the page.
   </p>
   <p>
+    A <a>screenshot</a> holds what the page showed in its viewport, and so the
+    content of everything the page had drawn there: its text, its images and
+    the documents of its frames, those from other sites included. It shows that
+    content whether or not the file holds the response that delivered it. A
+    response that the file does not hold, or holds without its body, had still
+    reached the page, whatever the reason: a policy, a size limit or a secret
+    (see <a href="#records-of-withheld-requests"></a> and
+    <a href="#records-of-bodies-not-kept"></a>). What the page drew from it is
+    in the image. A request the producer did not send (<code>deny</code>) is
+    another matter: nothing reached the page for it. A screenshot also shows
+    what the fields of the page held, and what the page displayed of a value a
+    <a>behavior</a> handed it. No rule of this specification finds a value in
+    pixels: the producer replaces the value of a <a>secret</a> in the URIs of a
+    screenshot's records and not in its image, where a value the page displayed
+    stays, hidden secret or not. The <code>document-uri</code> of a screenshot
+    keeps the fragment of the document's URL, as that of a snapshot does.
+    Nothing can be taken out of an image afterwards as a value is replaced in
+    text, so what keeps such content out of a file is keeping no screenshot of
+    the capture. When a capture is to keep none is for the package that holds
+    the file to say ([[BROWSERHIVE-WACZ-PROFILE]]).
+  </p>
+  <p>
     A <a>redacted record</a> hides the value of a <a>hidden secret</a> where the
     producer recognizes it: in what the browser sent and what the origins
     returned, in URLs, header fields and text bodies, and in a cookie set in
@@ -1015,7 +1318,10 @@ secrets-replaced: 0</pre>
     <li>A secret that is not hidden. The value of a secret that whoever asked for
         the capture asked to keep stays in the <code>request</code>,
         <code>response</code> and <code>metadata</code> records, though not in a
-        snapshot. When the URL the capture was asked for holds it, it also stays in
+        snapshot, and not in the <code>WARC-Target-URI</code> or the
+        <code>document-uri</code> of a screenshot's records, where the producer
+        replaces it as well. It does stay in the image of a screenshot, where the
+        page showed it. When the URL the capture was asked for holds it, it also stays in
         the <code>description</code> of a <code>warcinfo</code> record that names
         that URL.</li>
     <li>The fact that a value was there. <code>BrowserHive-Redacted</code> says

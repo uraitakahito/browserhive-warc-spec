@@ -6,7 +6,8 @@
 
 | 仕様 | 版 | 日本語訳 |
 |---|---|---|
-| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | **1.2.0** | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/ja/) |
+| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | **1.3.0** | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/ja/) |
+| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 1.2.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/ja/) |
 | [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | 1.1.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/ja/) |
 | [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 1.0.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/) |
 
@@ -44,4 +45,4 @@ CI（`.github/workflows/build.yml`）は公開の経路に居らず、検査だ�
 - 日本語訳の冒頭の版が、置き場の版と合うこと
 - 著者が書いたリンクが 200 を返すこと
 
-ローカルで見るには `1.2.0/index.html` をブラウザで開く。
+ローカルで見るには `1.3.0/index.html` をブラウザで開く。

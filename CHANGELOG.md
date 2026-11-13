@@ -8,11 +8,56 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.3.0](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | 2026-11-14 | スクリーンショット（取り込みの時点ごとの viewport の画像）を `resource` と `metadata` の組で足す |
 | [1.2.0](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 2026-11-07 | 隠すシークレットの値を、`request`・`response` のレコードの中で `***` に置き換える |
 | [1.1.0](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | 2026-11-02 | 写し（取り込みの時点ごとの文書の DOM）を `resource` と `metadata` の組で足す |
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
 
 ---
+
+## 1.3.0
+
+取り込みの時点（読み込んで落ち着いた後・behavior の後）で、ブラウザが取り込みのページを
+viewport の中にどう表示していたかを、画像にして WARC に残せるようにした。形は写し（1.1.0）と同じ、
+`resource` と `metadata` の組。
+
+- **スクリーンショット（screenshot）:** 画像を block に持つ `resource` レコード（`Content-Type: image/webp`・
+  `WARC-Block-Digest` と `WARC-Payload-Digest`）と、それを `WARC-Refers-To` で指す `metadata`
+  レコード（本文の欄 `screenshot`・`document-uri`・`document-record`・`viewport`・`device-pixel-ratio`・
+  `image-size`）。2 つは同じファイルに書き、同じ `WARC-Date`（取った瞬間）を持ち、`WARC-Concurrent-To` は
+  付けない。時点ごとに高々 1 つ。
+- **組の一貫性:** `screenshot` の値は `WARC-Target-URI` の中の時点と同じで、`WARC-Target-URI` の中の
+  URL は `document-uri` から fragment を除いたもの。`WARC-Target-URI` が `urn:browserhive:screenshot:` で
+  始まる `resource` には、それを `WARC-Refers-To` で名指すこの `metadata` が、ちょうど 1 つ在る。
+- **欄の書式:** `viewport` と `image-size` は `count "x" count`（幅・小文字の x・高さ。`count` は
+  `nonzero *DIGIT` = 1 以上で、先頭に 0 を付けない）。`device-pixel-ratio` は
+  `( nonzero *DIGIT [ "." *DIGIT nonzero ] ) | ( "0" "." *DIGIT nonzero )`（0 より大きく、指数を
+  使わず、省ける 0 を書かない。整数は小数部を持たない）。`nonzero` は 1 から 9 の数字。
+- **時点:** `after-load`・`after-behaviors`（写しの時点と同じ名前）。
+- **スクリーンショットの URI:** `WARC-Target-URI` は
+  `urn:browserhive:screenshot:<時点>:<文書の URL（fragment を除く）>`。シークレットの値は、写しの URI と
+  同じく置き換えた形。オリジンが文書の URL に対して返したものと取り違えられないように、また、同じ文書の
+  スクリーンショットどうしと写しを URI で分けられるように、合成した URI に置く。
+- **画像:** WebP。viewport を写し、その先（scroll して初めて見えるところ）は写さない —— viewport の先を
+  写そうとすると、取り込みのページが、画像のためだけに配置や取得をすることになる。画像の大きさは定めない:
+  `image-size` は block の画像自身が持つ幅と高さを述べ、画像の pixel 1 つが CSS pixel 1 つに当たるとは
+  限らない。`device-pixel-ratio` は、そのページがどの密度の画面に向けて描かれていたかを述べ、画像の倍率では
+  ない（倍率は `image-size` と `viewport` の比）。
+- **画像が写す状態:** 画像は、producer がスクリーンショットを取り始めたときに取り込みのページが持っていた
+  viewport の大きさ・device pixel ratio・scroll の位置で、そのページを写す。画像のためにそのどれかを
+  変えると、元に戻すとしても、そのページに何かをさせ、それが後に続くレコードに残るため。
+- **読み手への決まり:** スクリーンショットの `metadata` を、withheld request・body not kept・window not
+  opened のレコードや、写しの `metadata` として数えない。画像をオリジンが送ったものと取らない。
+  `screenshot` の値は閉じた集合ではないが、この版に適合するファイルが持つのは 2 つの時点だけ。知らない値を
+  持つ `metadata` が述べる画像を、ある時点のスクリーンショットとして扱わない。
+- **withheld request の `no-archive`（記述の訂正）:** `action` の説明から「オリジンは答えた」を外した。
+  レコードが言うのは、producer がリクエストを通し、この記録のほかには交信の何も残さなかったことで、
+  レスポンスが在ったことではない。
+- **直した節:** Records and files（スクリーンショットの 2 つのレコードも同じファイル）・Introduction・
+  Security（スクリーンショットは、ファイルがレスポンスを持っているかどうかに関わらず、取り込みのページが
+  描いたものの中身を写す。画像の中の値は置き換えられない）。
+- **この仕様が定めないこと:** どの取り込みがスクリーンショットを残さないかは、ファイルを収めるパッケージの
+  決まり（BrowserHive WACZ Profile）。
 
 ## 1.2.0
 
