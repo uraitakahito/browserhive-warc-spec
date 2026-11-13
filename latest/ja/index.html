@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.2.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.3.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.2.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.3.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -77,7 +77,7 @@
     BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
     までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
     名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
-    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.22.0 は、
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.24.0 は、
     パッケージの WARC ファイルがこの版に適合することを求めます。
   </p>
   <p class="note" title="WARC-Profile の欄とは別のもの">
@@ -102,6 +102,8 @@
     読み飛ばせます。<a>写し</a>は、それ自身の URI の下で <code>resource</code> レコードでも
     記録し、そのレコードはそうした読み手のためのものです: アーカイブしたページを配る読み手は、
     それを一覧に載せて手持ちのページと同じように配り、写しを取ったときのページの姿を見せます。
+    <a>スクリーンショット</a>も同じ形で記録します: その <code>resource</code> レコードは画像を
+    持ち、そうした読み手は、それをスクリーンショット自身の URI の下で見せられます。
   </p>
   <p>
     BrowserHive は WARC ファイルを WACZ パッケージに書き込み、パッケージの決まりは
@@ -159,7 +161,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -181,9 +183,9 @@ WARC-Filename: data-000.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/29.0.0
+software: browserhive/30.2.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -201,8 +203,8 @@ description: Capture of https://shop.example/</pre>
     1 つのレコードが 2 つのファイルにまたがってはなりません（<em class="rfc2119">MUST NOT</em>）。
     レコードは 1 つのファイルに丸ごと書かれ、producer は <code>continuation</code> レコードを
     書きません。1 つの<a>交信</a>のレコードは、同じファイルに在らなければならず
-    （<em class="rfc2119">MUST</em>）、1 つの<a>写し</a>の 2 つのレコードも同じです
-    （<em class="rfc2119">MUST</em>）。
+    （<em class="rfc2119">MUST</em>）、1 つの<a>写し</a>の 2 つのレコードも、1 つの
+    <a>スクリーンショット</a>の 2 つのレコードも同じです（<em class="rfc2119">MUST</em>）。
   </p>
   <p class="note">
     1 つの取り込みが、2 本以上のファイルを書くことがあります。それらのファイルの名前と、
@@ -560,7 +562,7 @@ encodedDataLength: 4821</pre>
       <tr><td><code>action</code></td><td>はい</td>
           <td>producer が何をしたか。<code>deny</code>: リクエストを送らなかった。その URL に
           ついて、取り込みを行う機械から出たものはありません。<code>no-archive</code>:
-          リクエストを通し、オリジンは答えたが、この記録のほかには交信の何も残さなかった。
+          リクエストを通し、この記録のほかには交信の何も残さなかった。
           リクエストが送られたかどうかを述べるのはこの欄です。</td></tr>
       <tr><td><code>pattern</code></td><td>はい</td>
           <td>一致したパターン。producer の方針の綴りのとおりで、読み手がそちらで引き当て
@@ -882,6 +884,250 @@ secrets-replaced: 0</pre>
   </section>
 </section>
 
+<section id="screenshots">
+  <h2>Screenshots</h2>
+  <p>
+    <dfn data-lt="screenshot">スクリーンショット</dfn>は、取り込みのある瞬間に、ブラウザが
+    取り込みのページを viewport の中にどう表示していたかを写した画像です。producer は
+    スクリーンショットを、そのときまでにブラウザが描いたものから —— そのページのスクリプトと
+    取り込みの <a>behavior</a> が変えたところは変わったまま —— 取り、オリジンが送ったものからは
+    作りません。この版が述べるのは、次の時点で取ったスクリーンショットです:
+  </p>
+  <ul>
+    <li><code>after-load</code> —— 取り込みのページが読み込まれて落ち着き、<a>behavior</a> が
+        まだ 1 つも走っていない。</li>
+    <li><code>after-behaviors</code> —— 取り込みがそのページで走らせた behavior が終わった。</li>
+  </ul>
+  <p>
+    これらは<a>写し</a>の時点で、名前も同じです。1 つの取り込みは、各時点の
+    スクリーンショットを高々 1 つ残し、behavior を走らせなかったときは
+    <code>after-behaviors</code> のものを残しません。1 つも残さなくてもかまいません。
+    取り込みがどの時点のスクリーンショットを
+    残したか、ある時点のものを残さなかった理由は、ファイルを収めるパッケージが記録します
+    （[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+  <p>
+    producer はスクリーンショットを、一緒に書く 2 つのレコードで記録します: 画像を持つ
+    <code>resource</code> レコードと、画像が何かを述べる <code>metadata</code> レコードです。
+    <code>metadata</code> レコードは <code>WARC-Refers-To</code> で <code>resource</code> レコードを
+    名指し、2 つのレコードは <code>WARC-Concurrent-To</code> を持ってはなりません
+    （<em class="rfc2119">MUST NOT</em>）。スクリーンショットは<a>交信</a>の一部ではありません。
+    [[WARC]] はその欄が結ぶレコードに 1 つの日時を持たせますが、スクリーンショットは、その文書を
+    読み込んだ交信と日時を共有しません。
+  </p>
+
+  <section id="screenshot-resource-records">
+    <h3>The <code>resource</code> record</h3>
+    <p>
+      スクリーンショットの <code>resource</code> レコードは、画像を block として持ち、次の
+      ヘッダの欄を持たなければなりません（<em class="rfc2119">MUST</em>）:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>WARC-Target-URI</code></td><td>はい</td>
+            <td><code>urn:browserhive:screenshot:</code> に続けて、時点、コロン、スクリーンショットを
+            取った瞬間の、取り込みのページの主フレームの文書の URL から fragment を除いたもの
+            （<a>シークレット</a>の値は、写しの URI と同じく置き換えた形。
+            <a href="#snapshot-resource-records"></a> を参照）。たとえば
+            <code>urn:browserhive:screenshot:after-load:https://shop.example/</code>。写しと同じく、
+            その URL は文書を読み込んだ URL と同じとは限りません。</td></tr>
+        <tr><td><code>WARC-Date</code></td><td>はい</td>
+            <td>producer がスクリーンショットを取った瞬間。</td></tr>
+        <tr><td><code>Content-Type</code></td><td>はい</td>
+            <td><code>image/webp</code>。</td></tr>
+        <tr><td><code>WARC-Block-Digest</code></td><td>はい</td>
+            <td>block の digest。</td></tr>
+        <tr><td><code>WARC-Payload-Digest</code></td><td>はい</td>
+            <td>payload の digest。<code>resource</code> レコードの payload は block そのもの
+            なので [[WARC]]、同じバイト列から計算します。</td></tr>
+      </tbody>
+    </table>
+    <p>
+      次の抜粋は、そのレコードのヘッダです。block（画像）は示していません:
+    </p>
+    <pre class="text">
+WARC-Type: resource
+WARC-Record-ID: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
+WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.512Z
+Content-Type: image/webp
+WARC-Block-Digest: sha256:22EW7ABMRNGE576GNNPFAU3XI6356UR7XGOFKREPIXIPOJTPDSLA
+WARC-Payload-Digest: sha256:22EW7ABMRNGE576GNNPFAU3XI6356UR7XGOFKREPIXIPOJTPDSLA
+Content-Length: 18764</pre>
+    <p>
+      これは <a href="#snapshot-resource-records"></a> の例と同じ取り込みの、同じ時点のものです。
+      同じ時点の写しとスクリーンショットは別々に取るもので、それぞれが自分を取った瞬間を
+      持ちます。2 つの日時が等しいとは限りません。
+    </p>
+    <p class="note" title="なぜそれ自身の URI なのか">
+      スクリーンショットは、写しと同じく、取り込みの成果物です。[[WARC]] は、そうした成果物に
+      合成した target URI を用意しています。それ自身の URI の下にあれば、どの読み手も画像を、
+      オリジンが文書の URL に対して返したものと取りません。URI の中の時点は、1 つの文書の
+      スクリーンショットを互いに分け、その文書の写しとも分けます。
+    </p>
+  </section>
+
+  <section id="screenshot-metadata-records">
+    <h3>The <code>metadata</code> record</h3>
+    <p>
+      スクリーンショットの <code>metadata</code> レコードは、画像が何かを述べます。その
+      <code>WARC-Refers-To</code> はスクリーンショットの <code>resource</code> レコードの
+      <code>WARC-Record-ID</code> で、<code>WARC-Target-URI</code> と <code>WARC-Date</code> は
+      そのレコードのものでなければならず（<em class="rfc2119">MUST</em>）、
+      <code>application/warc-fields</code> の本文は次を含まなければなりません
+      （<em class="rfc2119">MUST</em>）:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>screenshot</code></td><td>はい</td>
+            <td>producer がスクリーンショットを取った時点: <code>after-load</code> か
+            <code>after-behaviors</code>。</td></tr>
+        <tr><td><code>document-uri</code></td><td>はい</td>
+            <td>スクリーンショットを取った瞬間の、取り込みのページの主フレームの文書の URL を、
+            ブラウザが持っていたとおりに。fragment も含めます。<a>シークレット</a>の値は、写しの
+            <code>document-uri</code> と同じく置き換えた形です
+            （<a href="#snapshot-metadata-records"></a> を参照）。</td></tr>
+        <tr><td><code>document-record</code></td><td>いいえ</td>
+            <td>その文書を届けた <code>response</code> レコードの <code>WARC-Record-ID</code>
+            （山括弧を含めて）。そのレコードは、取り込みの別のファイルにあってもかまいません。
+            取り込みがそのレコードを持たないときは置きません。</td></tr>
+        <tr><td><code>viewport</code></td><td>はい</td>
+            <td>スクリーンショットを取った瞬間の、取り込みのページの viewport の幅と高さ。
+            viewport は、ブラウザがそのページを割り付けて見せていた領域で、scrollbar を
+            含みます。CSS pixel で、それぞれ 10 進で書き、間に <code>x</code> を置きます:
+            <code>1280x800</code>。</td></tr>
+        <tr><td><code>device-pixel-ratio</code></td><td>はい</td>
+            <td>スクリーンショットを取った瞬間の、取り込みのページの device pixel ratio を 10 進で。
+            たとえば <code>1</code>、<code>2</code>、<code>1.5</code>。そのページがどの密度の
+            画面に向けて描かれていたかを述べ、画像の倍率ではありません
+            （<a href="#screenshot-content"></a> を参照）。</td></tr>
+        <tr><td><code>image-size</code></td><td>はい</td>
+            <td>block の画像の幅と高さ。pixel で、<code>viewport</code> と同じ書き方です。
+            値は、その画像自身が持つ幅と高さでなければなりません
+            （<em class="rfc2119">MUST</em>）。読み手がこの欄を block と照らせるように
+            するためです。</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <code>viewport</code>・<code>image-size</code>・<code>device-pixel-ratio</code> の欄は、
+      次の形で書きます:
+    </p>
+    <pre class="text">
+viewport           = "viewport" ":" size
+image-size         = "image-size" ":" size
+device-pixel-ratio = "device-pixel-ratio" ":" ratio
+size               = count "x" count   ; 幅、x、高さ。x は小文字だけ
+count              = nonzero *DIGIT    ; 10 進。1 以上で、先頭に 0 を付けない
+ratio              = ( nonzero *DIGIT [ "." *DIGIT nonzero ] ) | ( "0" "." *DIGIT nonzero )
+                     ; 10 進。0 より大きく、指数を使わず、省ける 0 を書かない:
+                     ; 2 であって 2.0 ではない
+nonzero            = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</pre>
+    <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Record-ID: &lt;urn:uuid:0d661333-78a5-4d57-9856-269ae8507e29&gt;
+WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Date: 2026-11-02T01:20:07.512Z
+WARC-Refers-To: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
+Content-Type: application/warc-fields
+Content-Length: 204
+
+screenshot: after-behaviors
+document-uri: https://shop.example/results
+document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
+viewport: 1280x800
+device-pixel-ratio: 2
+image-size: 1280x800</pre>
+    <p>
+      この例では、取り込みのページは device pixel ratio 2 に向けて描かれており、画像の pixel での
+      大きさは、viewport の CSS pixel での大きさと同じです: このスクリーンショットでは、画像の
+      pixel 1 つが CSS pixel 1 つに当たります。<code>document-record</code> は、
+      <a href="#snapshot-metadata-records"></a> でこの時点の写しが名指すのと同じ
+      <code>response</code> レコードを名指します。
+    </p>
+    <p>
+      スクリーンショットの 2 つのレコードは、互いに合っています。<code>screenshot</code> の値は、
+      <code>WARC-Target-URI</code> の中の時点でなければならず（<em class="rfc2119">MUST</em>）、
+      <code>WARC-Target-URI</code> の中の URL は、<code>document-uri</code> から fragment を
+      除いたものでなければなりません（<em class="rfc2119">MUST</em>）。
+      <code>WARC-Target-URI</code> が <code>urn:browserhive:screenshot:</code> で始まる
+      <code>resource</code> レコードのそれぞれについて、それを <code>WARC-Refers-To</code> で
+      名指す、この節が述べる <code>metadata</code> レコードが、ちょうど 1 つ在らなければ
+      なりません（<em class="rfc2119">MUST</em>）。
+    </p>
+    <p>
+      本文は <code>action</code>・<code>truncated</code>・<code>window</code>・
+      <code>snapshot</code> を持ってはならず（<em class="rfc2119">MUST NOT</em>）、読み手は
+      このレコードを <a>withheld request のレコード</a>・<a>body not kept のレコード</a>・
+      <a>window not opened のレコード</a>・<a>写し</a>の <code>metadata</code> レコードとして
+      数えてはなりません（<em class="rfc2119">MUST NOT</em>）。このレコードは
+      <code>WARC-Payload-Digest</code> を持ちません。[[WARC]] はその欄を、payload が定まっている
+      レコードにしか認めていません。
+    </p>
+    <p>
+      <code>screenshot</code> の値は、閉じた集合ではありません。この版が定めるのは上に挙げた
+      時点だけで、ほかの値は定めません。後の版は、時点で取ったものではないスクリーンショットの
+      値を定めることがあります。この版に適合するファイルが持つ値は、上の 2 つだけです。
+      <code>metadata</code> レコードが、読み手の知らない <code>screenshot</code> の値を
+      持つとき、読み手は、そのレコードが述べる画像を、ある時点のスクリーンショットとして
+      扱ってはなりません（<em class="rfc2119">MUST NOT</em>）。
+    </p>
+  </section>
+
+  <section id="screenshot-content">
+    <h3>What a screenshot holds</h3>
+    <p>
+      スクリーンショットの <code>resource</code> レコードの block は、WebP 形式の、動かない
+      1 枚の画像でなければなりません（<em class="rfc2119">MUST</em>）。スクリーンショットを取った瞬間に、
+      ブラウザが取り込みのページを viewport の中に描いていたものです。主フレームの文書を、
+      そのページがそこに描いたもの —— 画像や、フレームの文書（別サイトのものも含みます）など ——
+      と一緒に写します。それはブラウザが作ったもので、オリジンのものではなく、読み手はそれを
+      オリジンが送ったものと取ってはなりません（<em class="rfc2119">MUST NOT</em>）。
+    </p>
+    <p>
+      画像は viewport を写し、その先を写してはなりません（<em class="rfc2119">MUST</em>）。
+      scroll して初めて見えるところには届きません。したがって、画像の幅と高さの比は、pixel への
+      丸めを除いて、viewport の幅と高さの比と同じです。取り込みのページは、viewport の先にある
+      ものを、それが見えるところに来て初めて配置し、多くはそこで初めて取りに行きます。そのページの
+      全体の画像を取ると、画像のためにブラウザにそれをさせることになります。
+    </p>
+    <p>
+      画像の大きさは、viewport の大きさからは決まりません。画像の pixel 1 つが CSS pixel 1 つに
+      当たるとは限らず、<code>device-pixel-ratio</code> は、それがいくつに当たるかを述べません。
+      その欄が述べるのは、取り込みのページがどの密度に向けて描かれていたかです。比が 2 のとき、
+      画像は、画像自身の大きさがどうであれ、密度の高い画面のためにそのページが選んだ画像を
+      写します。画像の倍率は、<code>image-size</code> と <code>viewport</code> の比です。
+    </p>
+    <p>
+      producer は、画像の中の何も置き換えません。取り込みのページが見せていた値は、
+      <a>シークレット</a>の値でも、画像の中に在ります。<a href="#redacted-records"></a> が
+      定める出現は、文字とバイト列の中の値の綴りで、画像の pixel はそれに当たりません。
+    </p>
+    <p>
+      画像は、producer がスクリーンショットを取り始めたときに取り込みのページが持っていた
+      viewport の大きさ、device pixel ratio、scroll の位置で、そのページを写さなければ
+      なりません（<em class="rfc2119">MUST</em>）。画像のためにそのどれかを変える producer は、
+      画像を取った後で元に戻すとしても、そのページに何かをさせ、そのページがしたことは
+      後に続くレコードに残ります: 取り込みはスクリーンショットの後も続き、behavior が走り、
+      producer はさらに交信・写し・スクリーンショットを記録します。だから producer は、
+      そのどれも変えずに画像を取ります。そうすれば、画像を取った後に元に戻すものもありません。
+      画像を取っている間でも、その後でも、そのページや behavior が自分でそれらを変えることは、
+      この決まりの外です。
+    </p>
+    <p class="note" title="なぜ画像の形式を 1 つにするのか">
+      形式が 1 つなら、読み手はどのスクリーンショットも 1 つの decoder で見せられ、block の
+      先頭のバイト列から、block が <code>Content-Type</code> の述べるとおりのものを持つかを
+      確かめられます。WebP は、viewport の画像を、取り込みが残す本文に比べて小さく保ちます。
+    </p>
+  </section>
+</section>
+
 <section id="security-and-privacy-considerations" class="informative">
   <h2>Security and privacy considerations</h2>
   <p>
@@ -908,6 +1154,27 @@ secrets-replaced: 0</pre>
     ことがなく、ログインの手順によっては、ページにトークンを渡すのに使われます。
   </p>
   <p>
+    <a>スクリーンショット</a>は、取り込みのページが viewport の中に表示していたものを持ち、
+    したがって、そのページがそこに描いたものすべての中身を持ちます: 文字、画像、フレームの文書
+    （別サイトのものも含みます）です。その中身は、それを届けたレスポンスをファイルが持って
+    いるかどうかに関わらず、画像に写ります。ファイルが持たないレスポンスも、本文なしで持つ
+    レスポンスも、理由が何であれ —— 方針でも、大きさの上限でも、シークレットでも
+    （<a href="#records-of-withheld-requests"></a> と
+    <a href="#records-of-bodies-not-kept"></a> を参照）—— そのページには届いており、
+    そのページがそこから描いたものは画像の中にあります。producer が送らなかったリクエスト
+    （<code>deny</code>）は別です: それについては、そのページに何も届いていません。
+    スクリーンショットは、そのページの欄が
+    持っていたものも、<a>behavior</a> が渡した値のうちそのページが表示したものも写します。
+    本仕様のどの決まりも、pixel の中の値は見つけません: producer が<a>シークレット</a>の値を
+    置き換えるのは、スクリーンショットのレコードの URI の中で、画像の中ではありません。
+    そのページが表示した値は、隠すシークレットかどうかに関わらず、画像に残ります。
+    スクリーンショットの <code>document-uri</code> は、写しのものと同じく、文書の URL の
+    fragment を残します。文字の中の値を置き換えるようには、画像から後で何かを取り除けません。
+    そうした中身をファイルに残さない手立ては、その取り込みのスクリーンショットを 1 つも
+    残さないことです。取り込みがいつ 1 つも残さないかは、ファイルを収めるパッケージが
+    定めます（[[BROWSERHIVE-WACZ-PROFILE]]）。
+  </p>
+  <p>
     <a>redacted のレコード</a>は、<a>隠すシークレット</a>の値を、producer が認識できるところで
     隠します: ブラウザが送ったものとオリジンが返したものの、URL・ヘッダの欄・文字の本文の中と、
     その値に応えて設定された cookie です。
@@ -927,7 +1194,10 @@ secrets-replaced: 0</pre>
         より長い base64 の文字列の中の値です。</li>
     <li>隠すものでないシークレット。取り込みを求めた側が残すことを求めたシークレットの値は、
         <code>request</code>・<code>response</code>・<code>metadata</code> のレコードに残ります
-        （写しには残りません）。取り込みを求めた URL が値を持つときは、その URL を書いた
+        （写しには残りません。スクリーンショットのレコードの <code>WARC-Target-URI</code> と
+        <code>document-uri</code> にも残らず、producer はそこでも置き換えます）。
+        スクリーンショットの画像には、取り込みのページが見せていたところに残ります。
+        取り込みを求めた URL が値を持つときは、その URL を書いた
         <code>warcinfo</code> のレコードの <code>description</code> にも残ります。</li>
     <li>値がそこにあったという事実。<code>BrowserHive-Redacted</code> がどこに何回あったかを述べ、
         <code>***</code> の周り（form の欄の名前など）も残ります。</li>
