@@ -124,14 +124,17 @@
   <p>
     A conforming file is a conforming [[WARC]] file. This specification adds
     requirements. It removes none of the requirements of [[WARC]] and relaxes
-    none of them. A WARC file that conforms to this specification is called a
-    <dfn>BrowserHive WARC</dfn> file. A WARC file that does not is still a WARC
-    file, and this specification says nothing about it.
+    none of them. A WARC file that conforms to a version of this specification
+    is called a <dfn>BrowserHive WARC</dfn> file. This specification sets no
+    requirement on what any other WARC file holds.
   </p>
   <p>
-    In one place this specification departs from what [[WARC]] recommends or
-    describes, though not from what it requires: a <a>redacted record</a> holds
-    less than [[WARC]] recommends, and says so in its own
+    Where this specification departs from [[WARC]], it departs from what
+    [[WARC]] recommends or describes, never from what it requires, and the
+    section that defines the record says so. For example, the payload of an
+    exchange is the body with its content-coding removed, written in the form
+    of HTTP/1.1 (see <a href="#exchanges"></a>), and a <a>redacted record</a>
+    holds less than [[WARC]] recommends, and says so in its own
     <code>BrowserHive-Redacted</code> field. [[WARC]] recommends
     that a <code>request</code> record block contain <q>the full HTTP request sent
     over the network</q> and a <code>response</code> record block <q>the full
@@ -205,10 +208,9 @@ description: Capture of https://shop.example/</pre>
     between. A reader <em class="rfc2119">MUST NOT</em> infer conformance to a
     version of this specification from anything other than
     <code>conformsTo</code>, and in particular not from the name of the file.
-    The package rules give the files a name that marks them
-    (<code>data-000.browserhive.warc.gz</code>, see [[BROWSERHIVE-WACZ-PROFILE]]),
-    but a name is kept or lost with the file, and anyone can give a file any
-    name.
+    The mark in the names the package rules give the files
+    (<code>data-000.browserhive.warc.gz</code>, see [[BROWSERHIVE-WACZ-PROFILE]])
+    is a hint, and a file that does not conform can carry the same name.
   </p>
 </section>
 

@@ -23,12 +23,12 @@ BrowserHive WARC Profile の版ごとの変更。
 のに合わせて、名前と適合の関係を書いた。ファイルに求める決まりは 1.3.0 と同じで、変わるのは
 warcinfo の `conformsTo` が名指す版だけ。
 
-- **呼び名（Conformance）:** この仕様に適合する WARC ファイルを `BrowserHive WARC` ファイルと呼ぶ。
-  適合しない WARC ファイルも WARC ファイルで、この仕様はそれについて何も述べない。
+- **呼び名（Conformance）:** この仕様のいずれかの版に適合する WARC ファイルを `BrowserHive WARC` ファイルと呼ぶ。
+  それ以外の WARC ファイルが何を持つかについて、この仕様は何も求めない。
 - **Conformance の文の直し:** 1.3.0 は「要求を取り除かず、緩めない」の直後に「redacted record は
   WARC 1.1 の言うことから外れる」と書き、2 つが食い違って読めた。外れるのは WARC 1.1 が勧める・述べる
   こと（request・response の block が持つもの・`WARC-Target-URI` が元の URI であること）からで、
-  求めることからではない、と 1 つの文にした。
+  求めることからではなく、そのレコードを定める節がそう述べる、と書き直した（例に payload の content-coding と redacted record）。
 - **適合はファイルの名前から推さない（warcinfo）:** 「`conformsTo` 以外から推してはならない」に、
   ファイルの名前を挙げた。名前の印（`data-000.browserhive.warc.gz`）は手がかりで、名乗りではない。
 - **例:** warcinfo の例の `WARC-Filename` を `data-000.browserhive.warc.gz` に、`software` を

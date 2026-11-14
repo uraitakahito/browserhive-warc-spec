@@ -120,14 +120,16 @@
   </p>
   <p>
     適合するファイルは、適合する [[WARC]] ファイルです。本仕様は要求を<em>追加</em>します。
-    [[WARC]] の要求を取り除くことも、緩めることもしません。本仕様に適合する WARC ファイルを
-    <dfn data-lt="BrowserHive WARC">BrowserHive WARC</dfn> ファイルと呼びます。適合しない WARC ファイルも
-    WARC ファイルであることに変わりはなく、本仕様はそれについて何も述べません。
+    [[WARC]] の要求を取り除くことも、緩めることもしません。本仕様のいずれかの版に適合する WARC
+    ファイルを <dfn>BrowserHive WARC</dfn> ファイルと呼びます。それ以外の WARC ファイルが何を持つかに
+    ついて、本仕様は何も求めません。
   </p>
   <p>
-    本仕様が [[WARC]] から外れるのは 1 か所で、それは [[WARC]] が勧めること・述べることからであって、
-    求めることからではありません: <a>redacted のレコード</a>は [[WARC]] が勧めるものより少なく持ち、
-    そのことを自分の <code>BrowserHive-Redacted</code> の欄で名乗ります。
+    本仕様が [[WARC]] から外れる所は、どれも [[WARC]] が勧めること・述べることからであって、
+    求めることからではなく、そのレコードを定める節がそう述べます。たとえば、交信の payload は
+    content-coding を外した本文を HTTP/1.1 の形で書いたもので（<a href="#exchanges"></a> を参照）、
+    <a>redacted のレコード</a>は [[WARC]] が勧めるものより少なく持ち、そのことを自分の
+    <code>BrowserHive-Redacted</code> の欄で名乗ります。
     [[WARC]] は、<code>request</code> レコードの block が
     <q>the full HTTP request sent over the network</q> を、<code>response</code> レコードの block が
     <q>the full HTTP response received over the network</q> を持つことを勧めていますが、
@@ -196,9 +198,9 @@ description: Capture of https://shop.example/</pre>
     <code>format</code> が名指し、適合するファイルはどれも WARC 1.1 のファイルです
     （Conformance を参照）。名乗りが 1 つなら、読み手はどちらを取るか迷いません。読み手は、
     <code>conformsTo</code> 以外の何かから、本仕様のある版への適合を推し量ってはなりません
-    （<em class="rfc2119">MUST NOT</em>）。ファイルの名前からも同じです。パッケージの決まりは
-    ファイルに印のある名前（<code>data-000.browserhive.warc.gz</code>。[[BROWSERHIVE-WACZ-PROFILE]] を参照）を
-    付けますが、名前はファイルと一緒に保たれも失われもし、誰でもファイルにどんな名前でも付けられます。
+    （<em class="rfc2119">MUST NOT</em>）。とりわけ、ファイルの名前から推し量ってはなりません。
+    パッケージの決まりがファイルに付ける名前の印（<code>data-000.browserhive.warc.gz</code>。
+    [[BROWSERHIVE-WACZ-PROFILE]] を参照）は手がかりで、適合しないファイルも同じ名前を持ちえます。
   </p>
 </section>
 
