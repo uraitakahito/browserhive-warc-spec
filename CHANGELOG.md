@@ -8,6 +8,7 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.5.0](https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/) | 2026-11-15 | フレームの写し（同じ origin の子フレームの文書の写し）を `urn:browserhive:frame-snapshot:` の `resource` と `metadata` の組で足し、親の写しの枠が `data-browserhive-snapshot` で名指す |
 | [1.4.0](https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/) | 2026-11-14 | 適合するファイルの呼び名「BrowserHive WARC」を定義し、ファイル名から適合を推さないことを書く。決まりは 1.3.0 と同じ |
 | [1.3.0](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | 2026-11-14 | スクリーンショット（取り込みの時点ごとの viewport の画像）を `resource` と `metadata` の組で足す |
 | [1.2.0](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 2026-11-07 | 隠すシークレットの値を、`request`・`response` のレコードの中で `***` に置き換える |
@@ -15,6 +16,34 @@ BrowserHive WARC Profile の版ごとの変更。
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
 
 ---
+
+## 1.5.0
+
+写しを、主フレームの文書から、同じ origin の子フレームの文書まで広げた。いままでの写しは主フレームの
+文書だけで、枠の中は、取り込みがその URL について記録した文書（サーバが送ったままで、ページの
+スクリプトが後で変えたものは入っていない）を読み手が出すしかなかった。
+
+- **フレームの写し（新しい節 `frame-snapshots`）:** 時点の写しを撮るとき、主フレームから読める
+  （同じ origin の）`frame`・`iframe` の文書のうち、URL が `http`・`https` の物を、要素の順に
+  （親が先・深さ優先）1 から番号を付けて写す。別 origin の枠と、`about:blank`・`about:srcdoc`・
+  `data:` の文書は写さず、中へも入らない。番号は時点ごとに付け直す。取り込みの方針が伏せる文書の
+  枠と、その下の枠は写さない（どの方針かは WACZ Profile が言う）。写しの決まり（`base` 要素・
+  スクリプトを持たない・パスワードの値・シークレットの置き換え）はそのまま当たる。
+- **レコード（新しい節 `frame-snapshot-records`）:** `resource` の `WARC-Target-URI` は
+  `urn:browserhive:frame-snapshot:<時点>:<番号>:<子の文書の URL>`。主の写しの
+  `urn:browserhive:snapshot:` と頭を分けたのは、いまの読み手がその後ろを文書の URL と読むため。
+  `metadata` の本文は主の写しの欄に `frame` と `parent`（主フレームは `0`）を足す。
+  `document-record` は、子の文書を届けたレコードが 1 つに決まるときだけ書く。
+- **親から子を名指す（新しい節 `frame-snapshot-references`）:** 写した子の枠の要素は、親の写しの中で
+  `src` を元のまま残し、`data-browserhive-snapshot` に子の URI を持つ（MUST）。写さなかった枠と
+  ほかの要素は持たない（MUST NOT）。頁が元から付けていた同じ名前の属性は写しで外す。属性を知らない
+  読み手は、いままでどおり枠に記録した元の文書を出す。知る読み手は子の写しを出してよい（MAY）。
+- **作り方（informative）:** 子の文書も同じ 1 回の走査で写し、親の中の枠に頁が前もって知りえない
+  仮の印を置き、方針と大きさで決めた後に URI へ置き換える手順を書いた。
+- **ほか:** Introduction・Records and files・Security and privacy considerations と、スクリーンショットの
+  `metadata` の「数えない」にフレームの写しを足した。warcinfo の例の `software` を
+  `browserhive/31.2.0` に（同じ長さの字なので `Content-Length` は 203 のまま）。
+- **WACZ Profile への参照:** 版を固定せず `latest/` のまま（BrowserHive WACZ Profile 1.27.0 は、この版の公開の後に出る）。
 
 ## 1.4.0
 

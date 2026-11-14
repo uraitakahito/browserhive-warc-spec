@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.4.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.5.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.4.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.5.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -77,7 +77,7 @@
     BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
     までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
     名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
-    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.25.0 は、
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.27.0 は、
     パッケージの WARC ファイルがこの版に適合することを求めます。
   </p>
   <p class="note" title="WARC-Profile の欄とは別のもの">
@@ -102,6 +102,9 @@
     読み飛ばせます。<a>写し</a>は、それ自身の URI の下で <code>resource</code> レコードでも
     記録し、そのレコードはそうした読み手のためのものです: アーカイブしたページを配る読み手は、
     それを一覧に載せて手持ちのページと同じように配り、写しを取ったときのページの姿を見せます。
+    <a>フレームの写し</a>（ページのフレームの 1 つの文書の写し）も同じ形で、それ自身の URI の下に
+    記録し、そのフレームを持つ写しがその URI を名指します。その名指しを知る読み手は、フレームも
+    そのときの姿で見せられます。
     <a>スクリーンショット</a>も同じ形で記録します: その <code>resource</code> レコードは画像を
     持ち、そうした読み手は、それをスクリーンショット自身の URI の下で見せられます。
   </p>
@@ -166,7 +169,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -188,9 +191,9 @@ WARC-Filename: data-000.browserhive.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/31.0.0
+software: browserhive/31.2.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -211,6 +214,7 @@ description: Capture of https://shop.example/</pre>
     レコードは 1 つのファイルに丸ごと書かれ、producer は <code>continuation</code> レコードを
     書きません。1 つの<a>交信</a>のレコードは、同じファイルに在らなければならず
     （<em class="rfc2119">MUST</em>）、1 つの<a>写し</a>の 2 つのレコードも、1 つの
+    <a>フレームの写し</a>の 2 つのレコードも、1 つの
     <a>スクリーンショット</a>の 2 つのレコードも同じです（<em class="rfc2119">MUST</em>）。
   </p>
   <p class="note">
@@ -683,9 +687,11 @@ target: page</pre>
   <p>
     <dfn>behavior</dfn> は、取り込みがページ自身のもののほかにページで走らせるコードです。
     たとえば検索の form に記入して送るものです。1 つの取り込みは各時点で写しを高々 1 つ取り、
-    behavior を走らせなかったときは <code>after-behaviors</code> では取りません。behavior の
-    コード、取り込みがどの時点で写しを取ったか、ある時点で取らなかった理由は、ファイルを収める
-    パッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
+    behavior を走らせなかったときは <code>after-behaviors</code> では取りません。ある時点の写しと
+    一緒に、producer はページのフレームのうち読める文書を写します（<a href="#frame-snapshots"></a>
+    を参照）。behavior の
+    コード、取り込みがどの時点で写しを取ったか、ある時点で取らなかった理由、どのフレームを写したかは、
+    ファイルを収めるパッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。
   </p>
   <p>
     producer は写しを、一緒に書く 2 つのレコードで記録します: 写しを持つ <code>resource</code>
@@ -857,6 +863,187 @@ secrets-replaced: 0</pre>
     </p>
   </section>
 
+  <section id="frame-snapshots">
+    <h3>Frame snapshots</h3>
+    <p>
+      <dfn data-lt="frame snapshot">フレームの写し</dfn>は、ページのフレームの 1 つの文書を、
+      <a>写し</a>の時点で写したものです。producer はフレームの写しを、ある時点の写しと一緒にだけ
+      取ります。写しを取らない時点では、フレームの写しも取りません。
+    </p>
+    <p>
+      フレームは主フレームの文書から辿ります。producer はその文書の要素を木の順に進み、出会った
+      <code>frame</code>・<code>iframe</code> の要素のうち文書を持つものは、それぞれ次のどれかです:
+    </p>
+    <ul>
+      <li>文書が別の origin のもので、producer が主フレームからその文書を読めないフレーム。
+          producer はそれを写さず、中へも入りません。</li>
+      <li>文書を読めて、その URL の scheme が <code>http</code> でも <code>https</code> でもない
+          フレーム。たとえば <code>about:blank</code>、<code>srcdoc</code> 属性の
+          <code>about:srcdoc</code>、<code>data:</code> の URL です。producer はそれを写さず、
+          中へも入りません。</li>
+      <li>文書を読めて、その URL の scheme が <code>http</code> か <code>https</code> である
+          フレーム。以下、<dfn data-lt="numbered frame">番号を付けるフレーム</dfn>と呼びます。
+          producer はそれに 1 から数えて次の番号を付け、その文書の要素を同じように進んでから、
+          そのフレームの要素の後に続く要素へ進みます。</li>
+    </ul>
+    <p>
+      したがって番号は要素の順に従い、フレームはその文書の中のフレームより先で、深さ優先です。
+      入れ子の文書のフレームも、主フレームの文書のフレームと同じように番号を付けます。番号は
+      1 つの時点のものです: フレームには時点ごとに改めて番号を付け、2 つの時点の同じ番号が同じ
+      フレームとは限りません。
+    </p>
+    <p>
+      producer は、<a>番号を付けるフレーム</a>でないフレームのフレームの写しを取ってはならず
+      （<em class="rfc2119">MUST NOT</em>）、番号を付けるフレームのそれぞれについて、1 つの時点で
+      高々 1 つ取ります。取り込みの方針がその文書を伏せる（ページから読むものに入れない）番号を
+      付けるフレームについても、そうしたフレームの文書の中やさらにその下の番号を付けるフレームに
+      ついても、取ってはなりません（<em class="rfc2119">MUST NOT</em>）。どの方針が文書を伏せるか、取り込みが
+      ある時点でどの番号を付けるフレームを写したか、写さなかったものがなぜかは、ファイルを収める
+      パッケージが記録します（[[BROWSERHIVE-WACZ-PROFILE]]）。producer は、写しの大きさなど
+      自分の理由で、番号を付けるフレームを写さないこともあります。
+    </p>
+    <p>
+      フレームの写しは、主フレームの文書の代わりにフレームの文書を置いて、写しと同じように記録し、
+      写しと同じものを持ちます。producer はそれを、一緒に書く <code>resource</code> レコードと
+      <code>metadata</code> レコードで記録し、2 つは <code>WARC-Concurrent-To</code> を持っては
+      なりません（<em class="rfc2119">MUST NOT</em>）。<a href="#snapshot-resource-records"></a>・
+      <a href="#snapshot-metadata-records"></a>・<a href="#snapshot-content"></a> が写しについて
+      述べることは、レコードの URI と <a href="#frame-snapshot-records"></a> が足す欄を除き、
+      フレームの写しにも当てはまります。したがって写しの head の最初の要素は、フレームの文書の
+      base URL を持つ <code>base</code> 要素で、写しはその文書のスクリプトを 1 つも持たず、
+      <a>シークレット</a>の値はその中で置き換えます。
+    </p>
+    <p class="note" title="なぜこれらのフレームだけか">
+      producer はページを、主フレームの中の自分のスクリプトの文脈から読みます。ブラウザは、
+      フレームの文書をスクリプトに読ませるのを、両者が同じ origin のときに限ります。別のサイトの
+      文書は、ページ自身のスクリプトの手が届かないのと同じく、producer の手も届きません。
+      <code>http</code>・<code>https</code> の URL を持たない文書は、読み手が引ける URL から
+      読み込んだものではなく、その中のフレームを名指せる写しもありません。
+    </p>
+  </section>
+
+  <section id="frame-snapshot-records">
+    <h3>The records of a frame snapshot</h3>
+    <p>
+      フレームの写しの <code>resource</code> レコードの <code>WARC-Target-URI</code> は、
+      <code>urn:browserhive:frame-snapshot:</code> に続けて、時点、コロン、フレームの番号を 10 進で、
+      コロン、写した瞬間のフレームの文書の URL から fragment を除いたもの（<a>シークレット</a>の値は、
+      写しの URI と同じく置き換えた形）でなければなりません（<em class="rfc2119">MUST</em>）。
+      たとえば
+      <code>urn:browserhive:frame-snapshot:after-load:1:https://shop.example/menu.html</code>。
+    </p>
+    <pre class="text">
+WARC/1.1
+WARC-Type: resource
+WARC-Record-ID: &lt;urn:uuid:2f6c8e1a-9b3d-4c5e-8a7f-0d1e2c3b4a59&gt;
+WARC-Target-URI: urn:browserhive:frame-snapshot:after-load:1:https://shop.example/menu.html
+WARC-Date: 2026-11-02T01:20:05.118Z
+Content-Type: text/html; charset=utf-8
+WARC-Block-Digest: sha256:V7KPA7QQ5CYQWYULJHSF2ZVSCRNSRAV3UBG67FZU7ZLMV7JV5I2A
+WARC-Payload-Digest: sha256:V7KPA7QQ5CYQWYULJHSF2ZVSCRNSRAV3UBG67FZU7ZLMV7JV5I2A
+Content-Length: 322
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;&lt;head&gt;&lt;base href="https://shop.example/menu.html"&gt;
+&lt;meta charset="utf-8"&gt;&lt;title&gt;Menu&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;a href="lamps.html"&gt;Lamps&lt;/a&gt;
+&lt;iframe src="promo.html" data-browserhive-snapshot="urn:browserhive:frame-snapshot:after-load:2:https://shop.example/promo.html"&gt;&lt;/iframe&gt;
+&lt;/body&gt;&lt;/html&gt;</pre>
+    <p>
+      この例では、<code>https://shop.example/</code> の文書が、同じ origin の
+      <code>menu.html</code> を文書に持つ <code>iframe</code>（1 番目の番号を付けるフレーム）を持ち、
+      その文書が自分の <code>iframe</code>（2 番目）を持ちます。<code>menu.html</code> の写しは、
+      2 番目のフレームの写しを名指します（<a href="#frame-snapshot-references"></a> を参照）。
+    </p>
+    <p class="note" title="なぜ別の頭なのか">
+      写しの読み手は、<code>urn:browserhive:snapshot:</code> の時点の後ろを文書の URL と読みます。
+      その頭の下では、フレームの番号が URL の始まりとして読まれてしまいます。自分の頭を持つ URI は、
+      この版の読み手にも前の版の読み手にも、写しの URI と取られません。
+    </p>
+    <p>
+      フレームの写しの <code>metadata</code> レコードの本文は、写しの <code>metadata</code>
+      レコードの欄と、次の 2 つを含まなければなりません（<em class="rfc2119">MUST</em>）:
+    </p>
+    <table class="simple">
+      <thead>
+        <tr><th>Field</th><th>必須</th><th>説明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>frame</code></td><td>はい</td>
+            <td>フレームの番号（<a href="#frame-snapshots"></a> を参照）を 10 進で。</td></tr>
+        <tr><td><code>parent</code></td><td>はい</td>
+            <td>そのフレームの要素を文書に持つフレームの番号を 10 進で。要素が主フレームの文書に
+            あるときは <code>0</code>。</td></tr>
+      </tbody>
+    </table>
+    <pre class="text">
+WARC/1.1
+WARC-Type: metadata
+WARC-Target-URI: urn:browserhive:frame-snapshot:after-load:1:https://shop.example/menu.html
+WARC-Date: 2026-11-02T01:20:05.118Z
+WARC-Refers-To: &lt;urn:uuid:2f6c8e1a-9b3d-4c5e-8a7f-0d1e2c3b4a59&gt;
+Content-Type: application/warc-fields
+Content-Length: 176
+
+snapshot: after-load
+frame: 1
+parent: 0
+document-uri: https://shop.example/menu.html
+document-record: &lt;urn:uuid:8b1e4c2a-5f3d-4a6e-b7c9-2d0f1e3a4b5c&gt;
+secrets-replaced: 0</pre>
+    <p>
+      写しと共有する欄のうち、<code>document-uri</code> はフレームの文書の URL で、
+      <code>document-record</code> はその文書を届けた <code>response</code> レコードを名指します。
+      producer は、どの 1 つの <code>response</code> レコードが文書を届けたかを言えないかぎり、
+      <code>document-record</code> を書いてはなりません（<em class="rfc2119">MUST NOT</em>）。
+      取り込みがそうしたレコードを持たないとき、または届けえたものを 2 つ以上持ちどれかを言えない
+      ときは、この欄を置きません。
+    </p>
+    <p>
+      フレームの写しの 2 つのレコードは食い違いません。<code>snapshot</code> の値は
+      <code>WARC-Target-URI</code> の中の時点で、<code>frame</code> の値はその中の番号で、その中の
+      URL は <code>document-uri</code> から fragment を除いたものでなければなりません
+      （<em class="rfc2119">MUST</em>）。<code>WARC-Target-URI</code> が
+      <code>urn:browserhive:frame-snapshot:</code> で始まる <code>resource</code> レコードの
+      それぞれについて、それを <code>WARC-Refers-To</code> で名指す、この節が述べる
+      <code>metadata</code> レコードが、ちょうど 1 つ在らなければなりません
+      （<em class="rfc2119">MUST</em>）。1 つの時点の 2 つのフレームの写しが、同じ番号を持っては
+      なりません（<em class="rfc2119">MUST NOT</em>）。
+    </p>
+  </section>
+
+  <section id="frame-snapshot-references">
+    <h3>Naming a frame snapshot from its parent</h3>
+    <p>
+      写しとフレームの写しの中で、producer が同じ時点でフレームの写しを取ったフレームの要素は、
+      値がそのフレームの写しの <code>resource</code> レコードの <code>WARC-Target-URI</code> である
+      <code>data-browserhive-snapshot</code> 属性を持たなければならず、その <code>src</code> 属性は
+      ページの中のとおりでなければなりません（<em class="rfc2119">MUST</em>）。ほかの要素は、
+      この属性を持ってはなりません（<em class="rfc2119">MUST NOT</em>）: producer がフレームの写しを
+      取らなかったフレームの要素も、ページの中でこの属性を持っていた要素も持たず、後者からは
+      producer が属性を取り除きます。属性の値の中の<a>シークレット</a>の値は、URI と同じく
+      置き換えた形で、その置き換えは <code>secrets-replaced</code> に数えません。
+    </p>
+    <p>
+      フレームの写しを名指す写しは、その親の写しです: <code>parent</code> が <code>0</code> なら
+      その時点の写し、そうでなければ、その時点のフレームの写しのうち <code>frame</code> が
+      <code>parent</code> であるもの。producer が親を写さなかったときは、どの属性もそのフレームの
+      写しを名指しません。
+    </p>
+    <p>
+      この属性を知らない読み手は、写しのフレームの中に、取り込みが <code>src</code> の URL について
+      記録したものを、手持ちのページと同じように見せます。この属性を知る読み手は、代わりに、属性が
+      名指すフレームの写しをそのフレームの中に見せてもかまいません（<em class="rfc2119">MAY</em>）。
+      それは、写しの時点のフレームの姿を見せます。
+    </p>
+    <p class="note" title="なぜ src を残すのか">
+      取り込みがフレームの URL について記録したのは、サーバが送ったとおりの文書で、ページの
+      スクリプトがその後で変えたかもしれないものです。<code>src</code> をそのままにすれば、
+      本プロファイルを知らない読み手は、この版より前と同じくその文書を見せ、属性はそれを探す読み手に
+      写しを差し出します。
+    </p>
+  </section>
+
   <section id="making-a-snapshot" class="informative">
     <h3>Making a snapshot</h3>
     <p>
@@ -879,8 +1066,17 @@ secrets-replaced: 0</pre>
           の属性と <code>srcdoc</code> を取り除き、<code>javascript:</code> の URL を
           <code>javascript:void(0)</code> に置き換えます。リンクはリンクの見た目のまま
           残ります。</li>
-      <li>フレームの <code>src</code> はそのままにします。フレームの文書は写しに含まれず、
-          読み手は、取り込みがその URL について記録したものを表示します。</li>
+      <li>フレームの <code>src</code> はそのままにし、ページが要素に付けた
+          <code>data-browserhive-snapshot</code> 属性は取り除きます。</li>
+      <li>文書を読めるフレームの要素に来たら、その文書を同じやり方で、同じスクリプトの文脈から、
+          同じ 1 回の走査の中で写してから、後に続く要素へ進みます。そうしたフレームのうち URL が
+          <code>http</code>・<code>https</code> のものには、来た順に番号を付け、親の複製の中の
+          その要素に、ページが前もって知りえない仮の印（たとえば取り込みごとの乱数を持つもの）を
+          置きます。1 回の走査なら、複製がその途中で何をしても（shadow root や canvas の
+          置き換えなど）、番号は要素の順のままです。</li>
+      <li>どのフレームの写しを書くかが決まったら —— フレームの文書に方針を当て、それぞれの写しの
+          大きさを量った後で —— 仮の印を、そのフレームの写しの URI（属性の値として escape した
+          形）に置き換え、書かないものでは取り除きます。</li>
       <li>文書の doctype を、無かったなら無いまま、もとのとおりに残します。読み手が写しを
           ページと同じモードで描くようにするためです。</li>
       <li>複製の head の先頭に、ページが使っていた文書の base URL を持つ <code>base</code>
@@ -1072,7 +1268,8 @@ image-size: 1280x800</pre>
       本文は <code>action</code>・<code>truncated</code>・<code>window</code>・
       <code>snapshot</code> を持ってはならず（<em class="rfc2119">MUST NOT</em>）、読み手は
       このレコードを <a>withheld request のレコード</a>・<a>body not kept のレコード</a>・
-      <a>window not opened のレコード</a>・<a>写し</a>の <code>metadata</code> レコードとして
+      <a>window not opened のレコード</a>・<a>写し</a>や<a>フレームの写し</a>の
+      <code>metadata</code> レコードとして
       数えてはなりません（<em class="rfc2119">MUST NOT</em>）。このレコードは
       <code>WARC-Payload-Digest</code> を持ちません。[[WARC]] はその欄を、payload が定まっている
       レコードにしか認めていません。
@@ -1159,6 +1356,9 @@ image-size: 1280x800</pre>
     残ることがあり、誰もシークレットと告げなかったものも残ることがあります。写しの
     <code>document-uri</code> は文書の URL の fragment を残します。fragment はサーバに送られる
     ことがなく、ログインの手順によっては、ページにトークンを渡すのに使われます。
+    <a>フレームの写し</a>は、ページと同じ origin のフレームの文書について同じだけを持ち、
+    シークレットの値は同じように置き換えます。取り込みの方針が文書を伏せるフレームは写さず、
+    その中のフレームも写しません。
   </p>
   <p>
     <a>スクリーンショット</a>は、取り込みのページが viewport の中に表示していたものを持ち、
