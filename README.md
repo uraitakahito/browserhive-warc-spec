@@ -3,10 +3,13 @@
 [BrowserHive](https://github.com/uraitakahito/browserhive) が書き出す WARC ファイルの仕様
 （BrowserHive WARC Profile）。[WARC 1.1](https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/)
 の上に、BrowserHive がどのレコードをどの形で書くかを定める。
+この仕様に適合する WARC ファイルを **BrowserHive WARC** と呼ぶ（1.4.0 から仕様の Conformance で定義）。
+BrowserHive WARC はどれも WARC 1.1 のファイルでもある。
 
 | 仕様 | 版 | 日本語訳 |
 |---|---|---|
-| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | **1.3.0** | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/ja/) |
+| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/) | **1.4.0** | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/ja/) |
+| [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | 1.3.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/ja/) |
 | [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 1.2.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/ja/) |
 | [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | 1.1.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/ja/) |
 | [BrowserHive WARC Profile](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 1.0.0 | [あり](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/ja/) |
@@ -45,4 +48,4 @@ CI（`.github/workflows/build.yml`）は公開の経路に居らず、検査だ�
 - 日本語訳の冒頭の版が、置き場の版と合うこと
 - 著者が書いたリンクが 200 を返すこと
 
-ローカルで見るには `1.3.0/index.html` をブラウザで開く。
+ローカルで見るには `1.4.0/index.html` をブラウザで開く。

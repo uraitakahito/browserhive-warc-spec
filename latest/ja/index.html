@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.3.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.4.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.3.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.4.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -77,7 +77,7 @@
     BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
     までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
     名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
-    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.24.0 は、
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.25.0 は、
     パッケージの WARC ファイルがこの版に適合することを求めます。
   </p>
   <p class="note" title="WARC-Profile の欄とは別のもの">
@@ -91,7 +91,7 @@
   <p>
     [[WARC]] は、レコードの枠の作り方と、レコードが持つヘッダの欄を定めます。payload に何を
     入れるか、残さなかった本文や送らなかったリクエストについてどのレコードを書くか、そしてその
-    理由をどう述べるかは、書き手に委ねています。BrowserHive の WARC ファイルの読み手にはその答えが
+    理由をどう述べるかは、書き手に委ねています。<a>BrowserHive WARC</a> ファイルの読み手にはその答えが
     要り、それはファイルを書いている間にしか知りえません。
   </p>
   <p>
@@ -120,11 +120,16 @@
   </p>
   <p>
     適合するファイルは、適合する [[WARC]] ファイルです。本仕様は要求を<em>追加</em>します。
-    取り除くことも、緩めることもしません。
+    [[WARC]] の要求を取り除くことも、緩めることもしません。本仕様のいずれかの版に適合する WARC
+    ファイルを <dfn>BrowserHive WARC</dfn> ファイルと呼びます。それ以外の WARC ファイルが何を持つかに
+    ついて、本仕様は何も求めません。
   </p>
   <p>
-    <a>redacted のレコード</a>は [[WARC]] がレコードについて述べることから外れ、
-    そのことを自分の <code>BrowserHive-Redacted</code> の欄で名乗ります。
+    本仕様が [[WARC]] から外れる所は、どれも [[WARC]] が勧めること・述べることからであって、
+    求めることからではなく、そのレコードを定める節がそう述べます。たとえば、交信の payload は
+    content-coding を外した本文を HTTP/1.1 の形で書いたもので（<a href="#exchanges"></a> を参照）、
+    <a>redacted のレコード</a>は [[WARC]] が勧めるものより少なく持ち、そのことを自分の
+    <code>BrowserHive-Redacted</code> の欄で名乗ります。
     [[WARC]] は、<code>request</code> レコードの block が
     <q>the full HTTP request sent over the network</q> を、<code>response</code> レコードの block が
     <q>the full HTTP response received over the network</q> を持つことを勧めていますが、
@@ -161,7 +166,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -179,13 +184,13 @@ WARC/1.1
 WARC-Type: warcinfo
 WARC-Record-ID: &lt;urn:uuid:0b7e8a52-6a63-4f0e-9d0b-6f1c2a3e4d5f&gt;
 WARC-Date: 2026-11-01T02:14:31.882Z
-WARC-Filename: data-000.warc.gz
+WARC-Filename: data-000.browserhive.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/30.2.0
+software: browserhive/31.0.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -193,7 +198,9 @@ description: Capture of https://shop.example/</pre>
     <code>format</code> が名指し、適合するファイルはどれも WARC 1.1 のファイルです
     （Conformance を参照）。名乗りが 1 つなら、読み手はどちらを取るか迷いません。読み手は、
     <code>conformsTo</code> 以外の何かから、本仕様のある版への適合を推し量ってはなりません
-    （<em class="rfc2119">MUST NOT</em>）。
+    （<em class="rfc2119">MUST NOT</em>）。とりわけ、ファイルの名前から推し量ってはなりません。
+    パッケージの決まりがファイルに付ける名前の印（<code>data-000.browserhive.warc.gz</code>。
+    [[BROWSERHIVE-WACZ-PROFILE]] を参照）は手がかりで、適合しないファイルも同じ名前を持ちえます。
   </p>
 </section>
 
