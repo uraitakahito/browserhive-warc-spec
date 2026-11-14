@@ -8,12 +8,32 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.4.0](https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/) | 2026-11-14 | 適合するファイルの呼び名「BrowserHive WARC」を定義し、ファイル名から適合を推さないことを書く。決まりは 1.3.0 と同じ |
 | [1.3.0](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | 2026-11-14 | スクリーンショット（取り込みの時点ごとの viewport の画像）を `resource` と `metadata` の組で足す |
 | [1.2.0](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 2026-11-07 | 隠すシークレットの値を、`request`・`response` のレコードの中で `***` に置き換える |
 | [1.1.0](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | 2026-11-02 | 写し（取り込みの時点ごとの文書の DOM）を `resource` と `metadata` の組で足す |
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
 
 ---
+
+## 1.4.0
+
+この仕様に適合する WARC ファイルを指す呼び名を定め、BrowserHive の WARC ファイルの名前が変わる
+（BrowserHive WACZ Profile 1.25.0 が、パッケージの中の名前を `data-NNN.browserhive.warc.gz` にする）
+のに合わせて、名前と適合の関係を書いた。ファイルに求める決まりは 1.3.0 と同じで、変わるのは
+warcinfo の `conformsTo` が名指す版だけ。
+
+- **呼び名（Conformance）:** この仕様に適合する WARC ファイルを `BrowserHive WARC` ファイルと呼ぶ。
+  適合しない WARC ファイルも WARC ファイルで、この仕様はそれについて何も述べない。
+- **Conformance の文の直し:** 1.3.0 は「要求を取り除かず、緩めない」の直後に「redacted record は
+  WARC 1.1 の言うことから外れる」と書き、2 つが食い違って読めた。外れるのは WARC 1.1 が勧める・述べる
+  こと（request・response の block が持つもの・`WARC-Target-URI` が元の URI であること）からで、
+  求めることからではない、と 1 つの文にした。
+- **適合はファイルの名前から推さない（warcinfo）:** 「`conformsTo` 以外から推してはならない」に、
+  ファイルの名前を挙げた。名前の印（`data-000.browserhive.warc.gz`）は手がかりで、名乗りではない。
+- **例:** warcinfo の例の `WARC-Filename` を `data-000.browserhive.warc.gz` に、`software` を
+  `browserhive/31.0.0` に（見出しと同じ長さの字なので `Content-Length` は 203 のまま）。
+- **WACZ Profile への参照:** 版を固定せず `latest/` のまま（WACZ Profile 1.25.0 は、この版の公開の後に出る）。
 
 ## 1.3.0
 

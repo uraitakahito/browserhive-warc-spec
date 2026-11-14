@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.3.0</title>
+<title>BrowserHive WARC Profile 1.4.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -76,7 +76,7 @@
     the WARC records BrowserHive writes. They moved here so that a WARC file can
     name the rules it follows by itself (see <a href="#warcinfo"></a>), and so
     that a file read apart from its package still means what it says.
-    BrowserHive WACZ Profile 1.24.0 requires the WARC files of a package to
+    BrowserHive WACZ Profile 1.25.0 requires the WARC files of a package to
     conform to this version.
   </p>
   <p class="note" title="Not the WARC-Profile field">
@@ -92,7 +92,7 @@
     [[WARC]] says how records are framed and which header fields they carry. It
     leaves to the writer what to put in a payload, which records to write about a
     body it did not keep or a request it did not send, and how to say why. A
-    reader of a BrowserHive WARC file needs those answers, and they are knowable
+    reader of a <a>BrowserHive WARC</a> file needs those answers, and they are knowable
     only while the file is being written.
   </p>
   <p>
@@ -123,11 +123,16 @@
   </p>
   <p>
     A conforming file is a conforming [[WARC]] file. This specification adds
-    requirements. It removes none, and it relaxes none.
+    requirements. It removes none of the requirements of [[WARC]] and relaxes
+    none of them. A WARC file that conforms to this specification is called a
+    <dfn>BrowserHive WARC</dfn> file. A WARC file that does not is still a WARC
+    file, and this specification says nothing about it.
   </p>
   <p>
-    A <a>redacted record</a> departs from what [[WARC]] says of a record, and
-    says so in its own <code>BrowserHive-Redacted</code> field. [[WARC]] recommends
+    In one place this specification departs from what [[WARC]] recommends or
+    describes, though not from what it requires: a <a>redacted record</a> holds
+    less than [[WARC]] recommends, and says so in its own
+    <code>BrowserHive-Redacted</code> field. [[WARC]] recommends
     that a <code>request</code> record block contain <q>the full HTTP request sent
     over the network</q> and a <code>response</code> record block <q>the full
     HTTP response received over the network</q>; a redacted record holds that
@@ -165,7 +170,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -184,13 +189,13 @@ WARC/1.1
 WARC-Type: warcinfo
 WARC-Record-ID: &lt;urn:uuid:0b7e8a52-6a63-4f0e-9d0b-6f1c2a3e4d5f&gt;
 WARC-Date: 2026-11-01T02:14:31.882Z
-WARC-Filename: data-000.warc.gz
+WARC-Filename: data-000.browserhive.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/30.2.0
+software: browserhive/31.0.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -199,7 +204,11 @@ description: Capture of https://shop.example/</pre>
     (see Conformance). A single declaration leaves a reader nothing to choose
     between. A reader <em class="rfc2119">MUST NOT</em> infer conformance to a
     version of this specification from anything other than
-    <code>conformsTo</code>.
+    <code>conformsTo</code>, and in particular not from the name of the file.
+    The package rules give the files a name that marks them
+    (<code>data-000.browserhive.warc.gz</code>, see [[BROWSERHIVE-WACZ-PROFILE]]),
+    but a name is kept or lost with the file, and anyone can give a file any
+    name.
   </p>
 </section>
 
