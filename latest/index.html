@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.6.0</title>
+<title>BrowserHive WARC Profile 1.7.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -176,7 +176,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -201,7 +201,7 @@ Content-Length: 203
 
 software: browserhive/32.1.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -320,10 +320,15 @@ description: Capture of https://shop.example/</pre>
   <section id="http-message-length">
     <h3>Length of the HTTP message</h3>
     <p>
-      In a <code>response</code> record, the <code>Content-Length</code> header
-      field of the HTTP message, if it has one,
+      In a <code>request</code> or <code>response</code> record, the
+      <code>Content-Length</code> header field of the HTTP message, if it has one,
       <em class="rfc2119">MUST</em> state the number of bytes of the payload the
-      record holds. The HTTP message of a <code>response</code> record
+      record holds. A <code>request</code> record whose payload is not empty
+      <em class="rfc2119">MUST</em> have a <code>Content-Length</code> header
+      field: an HTTP/1.1 request that has neither <code>Content-Length</code> nor
+      <code>Transfer-Encoding</code> has no body, so a reader would read none
+      (a response without either is read to its end instead). The HTTP message of a
+      <code>request</code> or <code>response</code> record
       <em class="rfc2119">MUST NOT</em> have a <code>Transfer-Encoding</code>
       header field: the payload is the content of the message, which no transfer
       coding is a part of.
@@ -368,6 +373,30 @@ Content-Type: text/plain
       stating <code>0</code> would misstate the size of the body a
       <code>GET</code> would have had.
     </p>
+    <p>
+      A <code>request</code> record whose body the producer could not obtain as
+      bytes holds an empty payload and says so with <code>WARC-Truncated</code>
+      (see <a href="#request-payloads"></a>). The browser did send that body, so
+      the length it sent was true of the request; kept in the record, it would
+      still describe a payload the record does not hold. A producer
+      <em class="rfc2119">SHOULD</em> drop the <code>Content-Length</code> of such
+      a record rather than state a length of <code>0</code>. Either way an HTTP
+      reader reads no body, which is what the record holds; but <code>0</code>
+      would state a length the request did not have, while a record without the
+      field states nothing false, and its <code>WARC-Truncated</code> says that
+      the request had a body the record does not hold. In this excerpt, the page
+      posted a 2048-byte <code>Blob</code>:
+    </p>
+    <pre class="text">
+WARC-Type: request
+WARC-Target-URI: https://example.com/upload
+Content-Type: application/http;msgtype=request
+WARC-Truncated: unspecified
+
+POST /upload HTTP/1.1
+Host: example.com
+Content-Type: application/octet-stream
+</pre>
   </section>
 
   <section id="request-payloads">
@@ -379,7 +408,13 @@ Content-Type: text/plain
       <a href="#redacted-records"></a>). A producer that cannot obtain them as
       bytes
       <em class="rfc2119">MUST NOT</em> store a body rebuilt from decoded text;
-      it records the request without one.
+      it records the request without one, and that <code>request</code> record
+      <em class="rfc2119">MUST</em> carry <code>WARC-Truncated: unspecified</code>,
+      so that a reader of the WARC file alone does not take the empty payload for
+      a request sent without a body. Unlike a response, such a request has no
+      <a>record of a body not kept</a>. A body dropped for holding the value of a
+      hidden secret is not this case: its record carries
+      <code>WARC-Truncated: secret</code> (see <a href="#redacted-records"></a>).
     </p>
   </section>
 </section>
