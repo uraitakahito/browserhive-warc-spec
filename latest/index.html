@@ -380,9 +380,12 @@ Content-Type: text/plain
       the length it sent was true of the request; kept in the record, it would
       still describe a payload the record does not hold. A producer
       <em class="rfc2119">SHOULD</em> drop the <code>Content-Length</code> of such
-      a record rather than state a length of <code>0</code>, which would say the
-      request had no body. In this excerpt, the page posted a 2048-byte
-      <code>Blob</code>:
+      a record rather than state a length of <code>0</code>. Either way an HTTP
+      reader reads no body, which is what the record holds; but <code>0</code>
+      would state a length the request did not have, while a record without the
+      field states nothing false, and its <code>WARC-Truncated</code> says that
+      the request had a body the record does not hold. In this excerpt, the page
+      posted a 2048-byte <code>Blob</code>:
     </p>
     <pre class="text">
 WARC-Type: request

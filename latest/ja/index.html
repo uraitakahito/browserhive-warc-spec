@@ -349,8 +349,11 @@ Content-Type: text/plain
       持ち、そのことを <code>WARC-Truncated</code> で言います（<a href="#request-payloads"></a> を参照）。
       ブラウザはその本文を確かに送ったので、送った長さはリクエストについては正しい値です。それでも
       レコードに残すと、レコードが持たない payload を言うことになります。producer は、そのような
-      レコードの <code>Content-Length</code> を、リクエストが本文を持たなかったと言うことになる
-      <code>0</code> と言う代わりに、外すべきです（<em class="rfc2119">SHOULD</em>）。次の抜粋では、
+      レコードの <code>Content-Length</code> を、<code>0</code> と言う代わりに外すべきです
+      （<em class="rfc2119">SHOULD</em>）。どちらでも HTTP の読み手は本文を読まず、それはレコードが
+      持つものと合います。ただ <code>0</code> は、リクエストが持たなかった長さを言うのに対し、
+      フィールドの無いレコードは偽りを言わず、リクエストが本文を持ったのにレコードが持たないことは
+      <code>WARC-Truncated</code> が言います。次の抜粋では、
       ページが 2048 バイトの <code>Blob</code> を送りました:
     </p>
     <pre class="text">
