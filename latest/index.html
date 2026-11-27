@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.5.0</title>
+<title>BrowserHive WARC Profile 1.6.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -76,7 +76,7 @@
     the WARC records BrowserHive writes. They moved here so that a WARC file can
     name the rules it follows by itself (see <a href="#warcinfo"></a>), and so
     that a file read apart from its package still means what it says.
-    BrowserHive WACZ Profile 1.27.0 requires the WARC files of a package to
+    BrowserHive WACZ Profile 1.28.0 requires the WARC files of a package to
     conform to this version.
   </p>
   <p class="note" title="Not the WARC-Profile field">
@@ -176,7 +176,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -199,9 +199,9 @@ WARC-Filename: data-000.browserhive.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/31.2.0
+software: browserhive/32.1.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -314,6 +314,59 @@ description: Capture of https://shop.example/</pre>
       records the response with an empty payload and a
       <a>record of a body not kept</a> whose <code>truncated</code> is
       <code>not-intercepted</code>.
+    </p>
+  </section>
+
+  <section id="http-message-length">
+    <h3>Length of the HTTP message</h3>
+    <p>
+      In a <code>response</code> record, the <code>Content-Length</code> header
+      field of the HTTP message, if it has one,
+      <em class="rfc2119">MUST</em> state the number of bytes of the payload the
+      record holds. The HTTP message of a <code>response</code> record
+      <em class="rfc2119">MUST NOT</em> have a <code>Transfer-Encoding</code>
+      header field: the payload is the content of the message, which no transfer
+      coding is a part of.
+    </p>
+    <p>
+      This holds for a response that has no body to send as well (one to a
+      <code>HEAD</code> request, and status <code>1xx</code>, <code>204</code>,
+      <code>205</code>, <code>3xx</code> and <code>304</code>), whose record holds
+      an empty payload. A server may send such a response with a
+      <code>Content-Length</code> it would have used for the body, or with
+      <code>Transfer-Encoding: chunked</code>; kept in the record, either would
+      tell a reader of the record alone to look for a body that is not there. A
+      producer <em class="rfc2119">SHOULD</em> drop these fields from the record
+      rather than state a length of <code>0</code> (see the note below).
+    </p>
+    <p>
+      In this excerpt of a <code>response</code> record, the server sent the
+      redirect with <code>Content-Length: 35</code> and a body the browser did not
+      pass on. The record holds no <code>Content-Length</code> header field:
+    </p>
+    <pre class="text">
+WARC-Type: response
+WARC-Target-URI: https://example.com/start
+Content-Type: application/http;msgtype=response
+
+HTTP/1.1 302 Found
+Location: /landing
+Content-Type: text/plain
+</pre>
+    <p>
+      The header block ends with an empty line, and the record ends there: its
+      payload is empty.
+    </p>
+    <p class="note" title="Why the length is dropped rather than set to 0">
+      In HTTP, the <code>Content-Length</code> of a response to a
+      <code>HEAD</code> request and of a <code>304</code> response states the size
+      of the body a <code>GET</code> would have had, and a reader that knows the
+      request method and the status reads no body after it. A reader of a
+      <code>response</code> record alone does not know the request method, and
+      some readers take that length as the length of the payload even for a
+      <code>304</code>. Dropping the field leaves nothing to misread, where
+      stating <code>0</code> would misstate the size of the body a
+      <code>GET</code> would have had.
     </p>
   </section>
 
@@ -530,7 +583,7 @@ encodedDataLength: 4821</pre>
   <p>
     For each response recorded without the body the server sent, other than a
     response that has no body to send (one to a <code>HEAD</code> request, and
-    status <code>1xx</code>, <code>204</code>, <code>3xx</code> and
+    status <code>1xx</code>, <code>204</code>, <code>205</code>, <code>3xx</code> and
     <code>304</code>), the file that holds the <code>response</code> record
     <em class="rfc2119">MUST</em> also hold a <code>metadata</code> record,
     hereafter a <dfn>record of a body not kept</dfn>. Its

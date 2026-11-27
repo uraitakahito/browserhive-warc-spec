@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.5.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.6.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.5.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.6.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -77,7 +77,7 @@
     BrowserHive が書く WARC のレコードの決まりは、[[BROWSERHIVE-WACZ-PROFILE]] の 1.15.0
     までは、その中にありました。ここへ移したのは、WARC ファイルが自分の従う決まりを自分で
     名乗れるようにするため（<a href="#warcinfo"></a> を参照）、そしてパッケージから取り出して
-    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.27.0 は、
+    読んだファイルも同じ意味を保つようにするためです。BrowserHive WACZ Profile 1.28.0 は、
     パッケージの WARC ファイルがこの版に適合することを求めます。
   </p>
   <p class="note" title="WARC-Profile の欄とは別のもの">
@@ -169,7 +169,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -191,9 +191,9 @@ WARC-Filename: data-000.browserhive.warc.gz
 Content-Type: application/warc-fields
 Content-Length: 203
 
-software: browserhive/31.2.0
+software: browserhive/32.1.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -292,6 +292,53 @@ description: Capture of https://shop.example/</pre>
       なりません（<em class="rfc2119">MUST NOT</em>）。そのレスポンスは、空の payload と、
       <code>truncated</code> が <code>not-intercepted</code> の
       <a>body not kept のレコード</a>で記録します。
+    </p>
+  </section>
+
+  <section id="http-message-length">
+    <h3>Length of the HTTP message</h3>
+    <p>
+      <code>response</code> レコードで、HTTP メッセージの <code>Content-Length</code> ヘッダ
+      フィールドは、あるなら、レコードが持つ payload のバイト数を言わなければなりません
+      （<em class="rfc2119">MUST</em>）。<code>response</code> レコードの HTTP メッセージは、
+      <code>Transfer-Encoding</code> ヘッダフィールドを持ってはなりません
+      （<em class="rfc2119">MUST NOT</em>）。payload はメッセージの content で、transfer coding は
+      その一部ではないからです。
+    </p>
+    <p>
+      これは、送る本文を持たないレスポンス（<code>HEAD</code> リクエストへのもの、ステータス
+      <code>1xx</code>・<code>204</code>・<code>205</code>・<code>3xx</code>・<code>304</code>）にも
+      当たります。そのレコードの payload は空です。サーバは、そのようなレスポンスを、本文に使った
+      はずの <code>Content-Length</code> や <code>Transfer-Encoding: chunked</code> を付けて送る
+      ことがあります。どちらもレコードに残すと、レコードだけを読む読み手に、無い本文を探させます。
+      producer は、長さを <code>0</code> と言う代わりに、これらのフィールドをレコードから外す
+      べきです（<em class="rfc2119">SHOULD</em>。下の注を参照）。
+    </p>
+    <p>
+      次の <code>response</code> レコードの抜粋では、サーバはリダイレクトを
+      <code>Content-Length: 35</code> と、ブラウザが渡さなかった本文を付けて送りました。レコードは
+      <code>Content-Length</code> ヘッダフィールドを持ちません:
+    </p>
+    <pre class="text">
+WARC-Type: response
+WARC-Target-URI: https://example.com/start
+Content-Type: application/http;msgtype=response
+
+HTTP/1.1 302 Found
+Location: /landing
+Content-Type: text/plain
+</pre>
+    <p>
+      ヘッダブロックは空行で終わり、レコードはそこで終わります。payload は空です。
+    </p>
+    <p class="note" title="長さを 0 にせず外す理由">
+      HTTP では、<code>HEAD</code> リクエストへのレスポンスと <code>304</code> レスポンスの
+      <code>Content-Length</code> は、<code>GET</code> なら本文が持ったはずの大きさを言い、
+      リクエストのメソッドとステータスを知る読み手は、その後に本文を読みません。
+      <code>response</code> レコードだけを読む読み手はリクエストのメソッドを知らず、
+      <code>304</code> でもその長さを payload の長さと取る読み手がいます。フィールドを外せば読み違える
+      ものが残りません。<code>0</code> と言えば、<code>GET</code> なら本文が持ったはずの大きさを
+      誤って言うことになります。
     </p>
   </section>
 
@@ -489,7 +536,7 @@ encodedDataLength: 4821</pre>
   <h2>Records of bodies not kept</h2>
   <p>
     サーバが送った本文を持たずに記録したレスポンスのそれぞれについて —— 送る本文を持たない
-    レスポンス（<code>HEAD</code> リクエストへのもの、ステータス <code>1xx</code>・<code>204</code>・
+    レスポンス（<code>HEAD</code> リクエストへのもの、ステータス <code>1xx</code>・<code>204</code>・<code>205</code>・
     <code>3xx</code>・<code>304</code>）を除いて —— <code>response</code> レコードを持つ
     ファイルは、<code>metadata</code> レコード —— 以下
     <dfn data-lt="record of a body not kept">body not kept のレコード</dfn> —— も持たなければ

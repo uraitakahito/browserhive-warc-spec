@@ -8,6 +8,7 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.6.0](https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/) | 2026-11-28 | `response` レコードの HTTP の `Content-Length` は持つ payload の長さを言い、`Transfer-Encoding` を持たない（本文を送らないレスポンスも）。送る本文を持たないレスポンスに `205` を足す |
 | [1.5.0](https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/) | 2026-11-15 | フレームの写し（同じ origin の子フレームの文書の写し）を `urn:browserhive:frame-snapshot:` の `resource` と `metadata` の組で足し、親の写しの枠が `data-browserhive-snapshot` で名指す |
 | [1.4.0](https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/) | 2026-11-14 | 適合するファイルの呼び名「BrowserHive WARC」を定義し、ファイル名から適合を推さないことを書く。決まりは 1.3.0 と同じ |
 | [1.3.0](https://uraitakahito.github.io/browserhive-warc-spec/1.3.0/) | 2026-11-14 | スクリーンショット（取り込みの時点ごとの viewport の画像）を `resource` と `metadata` の組で足す |
@@ -16,6 +17,28 @@ BrowserHive WARC Profile の版ごとの変更。
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
 
 ---
+
+## 1.6.0
+
+`response` レコードの HTTP メッセージが、レコードの持たない本文を言わないようにした。いままでは、
+送る本文を持たないレスポンス（リダイレクト・`304`・`HEAD` への答えなど）のレコードに、サーバが
+送った `Content-Length` や `Transfer-Encoding: chunked` が残ってよく、レコードだけを読む読み手
+（jwarc など）が、無い本文を読もうとして「HTTP の見出しが不正」と落とした（CAPTURE-366）。
+
+- **HTTP メッセージの長さ（新しい節 `http-message-length`）:** `response` レコードの HTTP の
+  `Content-Length` は、あるなら、レコードが持つ payload のバイト数を言う（MUST）。`response`
+  レコードの HTTP メッセージは `Transfer-Encoding` を持たない（MUST NOT）。送る本文を持たない
+  レスポンスにも当たる。`HEAD` への答えと `304` の `Content-Length` は、HTTP では `GET` の本文の
+  大きさを言うが、レコードだけを読む読み手はそれを payload の長さと取るので、`0` と言う代わりに
+  外すことを勧める（SHOULD。`0` も MUST には適合する。訳は注）。例の抜粋は 302。
+- **送る本文を持たないレスポンス:** `records-of-bodies-not-kept` の並びに `205` を足した
+  （BrowserHive は 205 も本文を持たないと扱っていた）。
+- **変えていない物:** `redacted-records` の「値を置き換えた記録と本文を落とした記録の HTTP の
+  `Content-Length` は持つバイトを言う」は、`request` レコードにも掛かるので、そのまま残す。
+  `request` レコードの HTTP の長さは、この版でも決めない。
+- **ほか:** warcinfo の例の `software` を `browserhive/32.1.0` に（同じ長さの字なので
+  `Content-Length` は 203 のまま）。sotd の注の WACZ Profile を 1.28.0 に（字だけで、リンクは
+  張らない。BrowserHive WACZ Profile 1.28.0 は、この版の公開の後に出る）。
 
 ## 1.5.0
 
