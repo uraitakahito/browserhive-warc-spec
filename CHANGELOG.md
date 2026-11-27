@@ -8,6 +8,7 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.7.0](https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/) | 2026-11-28 | `http-message-length` を `request` レコードにも掛け、本文のある `request` は長さを持つ。本文を得られなかった `request` は `WARC-Truncated: unspecified` を持ち、長さを外す |
 | [1.6.0](https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/) | 2026-11-28 | `response` レコードの HTTP の `Content-Length` は持つ payload の長さを言い、`Transfer-Encoding` を持たない（本文を送らないレスポンスも）。送る本文を持たないレスポンスに `205` を足す |
 | [1.5.0](https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/) | 2026-11-15 | フレームの写し（同じ origin の子フレームの文書の写し）を `urn:browserhive:frame-snapshot:` の `resource` と `metadata` の組で足し、親の写しの枠が `data-browserhive-snapshot` で名指す |
 | [1.4.0](https://uraitakahito.github.io/browserhive-warc-spec/1.4.0/) | 2026-11-14 | 適合するファイルの呼び名「BrowserHive WARC」を定義し、ファイル名から適合を推さないことを書く。決まりは 1.3.0 と同じ |
@@ -17,6 +18,22 @@ BrowserHive WARC Profile の版ごとの変更。
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
 
 ---
+
+## 1.7.0
+
+1.6.0 で `response` に掛けた HTTP メッセージの長さの決まりを、`request` レコードにも掛けた。ページがファイルや `Blob` を
+本文にして送った要求は、producer が本文をバイト列として得られず、レコードの payload は 0 バイトなのに、ブラウザが送った
+`Content-Length: 2048` などが残り、欠けたことも言っていなかった（CAPTURE-366。調べは t-rzgw）。
+
+- **`http-message-length`:** `request` レコードの HTTP の `Content-Length` も、あるなら持つ payload のバイト数を言う（MUST）。
+  payload が空でない `request` レコードは `Content-Length` を持つ（MUST。長さも `Transfer-Encoding` も無い HTTP/1.1 の
+  リクエストは本文を持たないと読まれるため。レスポンスは逆に終わりまで読まれる）。`Transfer-Encoding` を持たない（MUST NOT）。
+  本文を得られなかった `request` の長さは、`0` と言わず外す（SHOULD）。例の抜粋（`Blob` の POST）。
+- **`request-payloads`:** 本文をバイト列として得られず本文なしで記録した `request` レコードは `WARC-Truncated: unspecified`
+  を持つ（MUST）。レスポンスと違い、本文を残さなかった記録（metadata）は無い。値を含むので落とした本文は今までどおり
+  `WARC-Truncated: secret`。
+- **1.6.0 について:** 1.6.0 は公開したが、どの BrowserHive WACZ Profile も BrowserHive も名乗らないまま、この版に替わった
+  （BrowserHive WACZ Profile 1.28.0 と BrowserHive 32.1.0 は 1.7.0 を名乗る）。1.6.0 の文書は、ほかの版と同じく残す。
 
 ## 1.6.0
 

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.6.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.7.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.6.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.7.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -169,7 +169,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -193,7 +193,7 @@ Content-Length: 203
 
 software: browserhive/32.1.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -298,12 +298,16 @@ description: Capture of https://shop.example/</pre>
   <section id="http-message-length">
     <h3>Length of the HTTP message</h3>
     <p>
-      <code>response</code> レコードで、HTTP メッセージの <code>Content-Length</code> ヘッダ
-      フィールドは、あるなら、レコードが持つ payload のバイト数を言わなければなりません
-      （<em class="rfc2119">MUST</em>）。<code>response</code> レコードの HTTP メッセージは、
-      <code>Transfer-Encoding</code> ヘッダフィールドを持ってはなりません
-      （<em class="rfc2119">MUST NOT</em>）。payload はメッセージの content で、transfer coding は
-      その一部ではないからです。
+      <code>request</code> と <code>response</code> のレコードで、HTTP メッセージの
+      <code>Content-Length</code> ヘッダフィールドは、あるなら、レコードが持つ payload のバイト数を
+      言わなければなりません（<em class="rfc2119">MUST</em>）。payload が空でない
+      <code>request</code> レコードは、<code>Content-Length</code> ヘッダフィールドを持たなければ
+      なりません（<em class="rfc2119">MUST</em>）。<code>Content-Length</code> も
+      <code>Transfer-Encoding</code> も持たない HTTP/1.1 のリクエストは本文を持たないので、読み手は
+      本文を読みません（どちらも持たないレスポンスは、逆に終わりまで読みます）。<code>request</code> と
+      <code>response</code> のレコードの HTTP メッセージは、<code>Transfer-Encoding</code>
+      ヘッダフィールドを持ってはなりません（<em class="rfc2119">MUST NOT</em>）。payload はメッセージの
+      content で、transfer coding はその一部ではないからです。
     </p>
     <p>
       これは、送る本文を持たないレスポンス（<code>HEAD</code> リクエストへのもの、ステータス
@@ -340,6 +344,25 @@ Content-Type: text/plain
       ものが残りません。<code>0</code> と言えば、<code>GET</code> なら本文が持ったはずの大きさを
       誤って言うことになります。
     </p>
+    <p>
+      producer が本文をバイト列として得られなかった <code>request</code> レコードは、空の payload を
+      持ち、そのことを <code>WARC-Truncated</code> で言います（<a href="#request-payloads"></a> を参照）。
+      ブラウザはその本文を確かに送ったので、送った長さはリクエストについては正しい値です。それでも
+      レコードに残すと、レコードが持たない payload を言うことになります。producer は、そのような
+      レコードの <code>Content-Length</code> を、リクエストが本文を持たなかったと言うことになる
+      <code>0</code> と言う代わりに、外すべきです（<em class="rfc2119">SHOULD</em>）。次の抜粋では、
+      ページが 2048 バイトの <code>Blob</code> を送りました:
+    </p>
+    <pre class="text">
+WARC-Type: request
+WARC-Target-URI: https://example.com/upload
+Content-Type: application/http;msgtype=request
+WARC-Truncated: unspecified
+
+POST /upload HTTP/1.1
+Host: example.com
+Content-Type: application/octet-stream
+</pre>
   </section>
 
   <section id="request-payloads">
@@ -349,7 +372,13 @@ Content-Type: text/plain
       もの（<a href="#redacted-records"></a> を参照）を除き、ブラウザがリクエストの本文として
       送ったバイト列でなければなりません（<em class="rfc2119">MUST</em>）。それをバイト列として
       得られない producer は、文字から組み直した本文を保存してはなりません
-      （<em class="rfc2119">MUST NOT</em>）。そのリクエストは本文なしで記録します。
+      （<em class="rfc2119">MUST NOT</em>）。そのリクエストは本文なしで記録し、その
+      <code>request</code> レコードは <code>WARC-Truncated: unspecified</code> を持たなければ
+      なりません（<em class="rfc2119">MUST</em>）。WARC ファイルだけを読む読み手が、空の payload を
+      本文なしで送ったリクエストと取り違えないためです。レスポンスと違い、そのようなリクエストには
+      <a>body not kept のレコード</a>はありません。<a>隠すシークレット</a>の値を含むので落とした本文は
+      これに当たらず、そのレコードは <code>WARC-Truncated: secret</code> を持ちます
+      （<a href="#redacted-records"></a> を参照）。
     </p>
   </section>
 </section>
