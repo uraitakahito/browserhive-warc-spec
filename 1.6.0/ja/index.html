@@ -302,8 +302,8 @@ description: Capture of https://shop.example/</pre>
       フィールドは、あるなら、レコードが持つ payload のバイト数を言わなければなりません
       （<em class="rfc2119">MUST</em>）。<code>response</code> レコードの HTTP メッセージは、
       <code>Transfer-Encoding</code> ヘッダフィールドを持ってはなりません
-      （<em class="rfc2119">MUST NOT</em>）。payload は、サーバが送ったときの transfer coding を
-      外して保存するからです。
+      （<em class="rfc2119">MUST NOT</em>）。payload はメッセージの content で、transfer coding は
+      その一部ではないからです。
     </p>
     <p>
       これは、送る本文を持たないレスポンス（<code>HEAD</code> リクエストへのもの、ステータス
@@ -311,8 +311,8 @@ description: Capture of https://shop.example/</pre>
       当たります。そのレコードの payload は空です。サーバは、そのようなレスポンスを、本文に使った
       はずの <code>Content-Length</code> や <code>Transfer-Encoding: chunked</code> を付けて送る
       ことがあります。どちらもレコードに残すと、レコードだけを読む読み手に、無い本文を探させます。
-      producer は、長さを <code>0</code> と言う代わりに、これらのフィールドをレコードから外します
-      （下の注を参照）。
+      producer は、長さを <code>0</code> と言う代わりに、これらのフィールドをレコードから外す
+      べきです（<em class="rfc2119">SHOULD</em>。下の注を参照）。
     </p>
     <p>
       次の <code>response</code> レコードの抜粋では、サーバはリダイレクトを
@@ -328,13 +328,17 @@ HTTP/1.1 302 Found
 Location: /landing
 Content-Type: text/plain
 </pre>
-    <p class="note" title="HEAD へのレスポンスが言える長さも外す理由">
+    <p>
+      ヘッダブロックは空行で終わり、レコードはそこで終わります。payload は空です。
+    </p>
+    <p class="note" title="長さを 0 にせず外す理由">
       HTTP では、<code>HEAD</code> リクエストへのレスポンスと <code>304</code> レスポンスの
       <code>Content-Length</code> は、<code>GET</code> なら本文が持ったはずの大きさを言い、
       リクエストのメソッドとステータスを知る読み手は、その後に本文を読みません。
-      <code>response</code> レコードだけを読む読み手は、それをいつも知るとは限らず、その長さを
-      payload の長さと取ります。代わりに <code>0</code> と言えば、本文が持たない大きさを言うことに
-      なります。
+      <code>response</code> レコードだけを読む読み手はリクエストのメソッドを知らず、
+      <code>304</code> でもその長さを payload の長さと取る読み手がいます。フィールドを外せば読み違える
+      ものが残りません。<code>0</code> と言えば、<code>GET</code> なら本文が持ったはずの大きさを
+      誤って言うことになります。
     </p>
   </section>
 

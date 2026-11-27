@@ -30,7 +30,7 @@ BrowserHive WARC Profile の版ごとの変更。
   レコードの HTTP メッセージは `Transfer-Encoding` を持たない（MUST NOT）。送る本文を持たない
   レスポンスにも当たる。`HEAD` への答えと `304` の `Content-Length` は、HTTP では `GET` の本文の
   大きさを言うが、レコードだけを読む読み手はそれを payload の長さと取るので、`0` と言う代わりに
-  外す（注）。
+  外すことを勧める（SHOULD。`0` も MUST には適合する。訳は注）。例の抜粋は 302。
 - **送る本文を持たないレスポンス:** `records-of-bodies-not-kept` の並びに `205` を足した
   （BrowserHive は 205 も本文を持たないと扱っていた）。
 - **変えていない物:** `redacted-records` の「値を置き換えた記録と本文を落とした記録の HTTP の
