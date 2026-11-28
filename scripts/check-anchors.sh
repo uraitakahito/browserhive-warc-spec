@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # build.yml の assets の job から呼ぶ。手元でも repo の根で `bash scripts/check-anchors.sh` で同じ検査になる。
-# -eo pipefail は GitHub Actions の既定の bash（`bash -eo pipefail {0}`）と同じにするため。
-set -euo pipefail
+# -e は、GitHub Actions の run の既定の shell（shell を書かない時の `bash -e {0}`。pipefail は付かない）と同じにするため（review-16）。
+set -e
 
 # browserhive の要求の目録は、この仕様の節を錨で指し、その錨が在るかをブラウザを起こさずに
 # 原稿から読む。ReSpec は id の無い section にも描くときに見出しから id を作るが、それは

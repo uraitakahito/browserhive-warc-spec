@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # build.yml の assets の job から呼ぶ。手元でも repo の根で `bash scripts/check-respec-path.sh` で同じ検査になる。
-# -eo pipefail は GitHub Actions の既定の bash（`bash -eo pipefail {0}`）と同じにするため。
-set -euo pipefail
+# -e は、GitHub Actions の run の既定の shell（shell を書かない時の `bash -e {0}`。pipefail は付かない）と同じにするため（review-16）。
+set -e
 
 # 閲覧者のブラウザで描く以上、script が引けなければページは崩れる。崩れても HTTP は 200
 # なので、公開の後に気づく手立てが無い。同じオリジンに置いてあるので、壊れ方は「ファイルが
