@@ -1,0 +1,28 @@
+// roster（uraitakahito/roster）の担当が push するときの設定。書いていない欄は既定のまま。
+{
+  // roster push が、push の前に流す確かめ（書き方は roster の docs-site の設定のページの「push の前の確かめ」）。
+  // CI（build.yml の assets の job）の中で、通信もブラウザも要らない 4 つ。CI も同じ script を呼ぶ。
+  // 入れない物: build（spec-prod。ブラウザと W3C の validator への通信に依る）・linkcheck（外へ通信する）・respec-drift（定期の実行で w3.org に依る）。
+  // 要る用意: 無い（bash・perl・python3 の標準だけ）。
+  // roster push は origin/main のこの欄を読むので、変えた一覧は merge の後から効く。
+  "push": {
+    "checks": [
+      {
+        "name": "respec-path",
+        "run": ["bash", "scripts/check-respec-path.sh"],
+      },
+      {
+        "name": "anchors",
+        "run": ["bash", "scripts/check-anchors.sh"],
+      },
+      {
+        "name": "content-length",
+        "run": ["python3", "scripts/check-content-length.py"],
+      },
+      {
+        "name": "ja-version",
+        "run": ["python3", "scripts/check-ja-version.py"],
+      },
+    ],
+  },
+}
