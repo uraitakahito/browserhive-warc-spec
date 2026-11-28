@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.7.0 (日本語訳)</title>
+<title>BrowserHive WARC Profile 1.8.0 (日本語訳)</title>
 <!--
   英語版と同じく、同梱の ReSpec を相対パスで読む。詳しくは ../index.html を参照。
 
@@ -57,7 +57,7 @@
 
 <section id="abstract">
   <p class="note" title="非公式翻訳 (Unofficial translation)">
-    これは BrowserHive WARC Profile 1.7.0 の日本語訳です。<strong>正典は
+    これは BrowserHive WARC Profile 1.8.0 の日本語訳です。<strong>正典は
     <a href="../">英語原典</a></strong>であり、判断の根拠にする場面ではそちらを確認してください。
     訳と原典が食い違った場合は原典が優先します。
   </p>
@@ -169,7 +169,7 @@
     <tbody>
       <tr><td><code>conformsTo</code></td><td>はい</td>
           <td>そのファイルが満たすと主張する本仕様の版の URL。この版では
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/</code>。この欄は
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.8.0/</code>。この欄は
           ちょうど 1 回現れなければなりません（<em class="rfc2119">MUST</em>）。</td></tr>
       <tr><td><code>format</code></td><td>はい</td>
           <td><code>WARC File Format 1.1</code>。</td></tr>
@@ -193,7 +193,7 @@ Content-Length: 203
 
 software: browserhive/32.1.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.8.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -761,12 +761,15 @@ target: page</pre>
   <ul>
     <li><code>after-load</code> —— ページが読み込まれて落ち着き、<a>behavior</a> がまだ 1 つも
         走っていない。</li>
-    <li><code>after-behaviors</code> —— 取り込みがページで走らせた behavior が終わった。</li>
+    <li><code>after-capture-scripts</code> —— 取り込みがページで走らせた behavior が終わった。</li>
   </ul>
   <p>
     <dfn>behavior</dfn> は、取り込みがページ自身のもののほかにページで走らせるコードです。
-    たとえば検索の form に記入して送るものです。1 つの取り込みは各時点で写しを高々 1 つ取り、
-    behavior を走らせなかったときは <code>after-behaviors</code> では取りません。ある時点の写しと
+    たとえば検索の form に記入して送るものです。取り込みを頼む側が送り、producer がページで
+    走らせるコードを <dfn>capture scripts</dfn> と呼びます。behavior は、capture scripts のうち
+    ページが読み込まれた後に走るもので、時点 <code>after-capture-scripts</code> の名はここから
+    来ます。1 つの取り込みは各時点で写しを高々 1 つ取り、
+    behavior を走らせなかったときは <code>after-capture-scripts</code> では取りません。ある時点の写しと
     一緒に、producer はページのフレームのうち読める文書を写します（<a href="#frame-snapshots"></a>
     を参照）。behavior の
     コード、取り込みがどの時点で写しを取ったか、ある時点で取らなかった理由、どのフレームを写したかは、
@@ -813,7 +816,7 @@ target: page</pre>
 WARC/1.1
 WARC-Type: resource
 WARC-Record-ID: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
-WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:snapshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.415Z
 Content-Type: text/html; charset=utf-8
 WARC-Block-Digest: sha256:RK4XPNMRVNTPF7OWYGYRXMHDFC5H2RF7BH74Y2KKIRRELLG6MZJQ
@@ -858,7 +861,7 @@ Content-Length: 237
       <tbody>
         <tr><td><code>snapshot</code></td><td>はい</td>
             <td>producer が写しを取った時点: <code>after-load</code> か
-            <code>after-behaviors</code>。</td></tr>
+            <code>after-capture-scripts</code>。</td></tr>
         <tr><td><code>document-uri</code></td><td>はい</td>
             <td>写しを取った瞬間の文書の URL を、ブラウザが持っていたとおりに。fragment も
             含めます。<a>シークレット</a>の値は置き換えた形です（<a href="#snapshot-content"></a>
@@ -877,13 +880,13 @@ Content-Length: 237
     <pre class="text">
 WARC/1.1
 WARC-Type: metadata
-WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:snapshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.415Z
 WARC-Refers-To: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
 Content-Type: application/warc-fields
-Content-Length: 158
+Content-Length: 164
 
-snapshot: after-behaviors
+snapshot: after-capture-scripts
 document-uri: https://shop.example/results
 document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
 secrets-replaced: 0</pre>
@@ -1178,12 +1181,12 @@ secrets-replaced: 0</pre>
   <ul>
     <li><code>after-load</code> —— 取り込みのページが読み込まれて落ち着き、<a>behavior</a> が
         まだ 1 つも走っていない。</li>
-    <li><code>after-behaviors</code> —— 取り込みがそのページで走らせた behavior が終わった。</li>
+    <li><code>after-capture-scripts</code> —— 取り込みがそのページで走らせた behavior が終わった。</li>
   </ul>
   <p>
     これらは<a>写し</a>の時点で、名前も同じです。1 つの取り込みは、各時点の
     スクリーンショットを高々 1 つ残し、behavior を走らせなかったときは
-    <code>after-behaviors</code> のものを残しません。1 つも残さなくてもかまいません。
+    <code>after-capture-scripts</code> のものを残しません。1 つも残さなくてもかまいません。
     取り込みがどの時点のスクリーンショットを
     残したか、ある時点のものを残さなかった理由は、ファイルを収めるパッケージが記録します
     （[[BROWSERHIVE-WACZ-PROFILE]]）。
@@ -1233,7 +1236,7 @@ secrets-replaced: 0</pre>
     <pre class="text">
 WARC-Type: resource
 WARC-Record-ID: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
-WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:screenshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.512Z
 Content-Type: image/webp
 WARC-Block-Digest: sha256:22EW7ABMRNGE576GNNPFAU3XI6356UR7XGOFKREPIXIPOJTPDSLA
@@ -1269,7 +1272,7 @@ Content-Length: 18764</pre>
       <tbody>
         <tr><td><code>screenshot</code></td><td>はい</td>
             <td>producer がスクリーンショットを取った時点: <code>after-load</code> か
-            <code>after-behaviors</code>。</td></tr>
+            <code>after-capture-scripts</code>。</td></tr>
         <tr><td><code>document-uri</code></td><td>はい</td>
             <td>スクリーンショットを取った瞬間の、取り込みのページの主フレームの文書の URL を、
             ブラウザが持っていたとおりに。fragment も含めます。<a>シークレット</a>の値は、写しの
@@ -1314,13 +1317,13 @@ nonzero            = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</pre>
 WARC/1.1
 WARC-Type: metadata
 WARC-Record-ID: &lt;urn:uuid:0d661333-78a5-4d57-9856-269ae8507e29&gt;
-WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:screenshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.512Z
 WARC-Refers-To: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
 Content-Type: application/warc-fields
-Content-Length: 204
+Content-Length: 210
 
-screenshot: after-behaviors
+screenshot: after-capture-scripts
 document-uri: https://shop.example/results
 document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
 viewport: 1280x800

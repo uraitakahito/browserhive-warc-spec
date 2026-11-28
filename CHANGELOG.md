@@ -8,6 +8,7 @@ BrowserHive WARC Profile の版ごとの変更。
 
 | 版 | 日付 | 一言で |
 |---|---|---|
+| [1.8.0](https://uraitakahito.github.io/browserhive-warc-spec/1.8.0/) | 2026-11-28 | 写しとスクリーンショットの時点 `after-behaviors` を `after-capture-scripts` に改め、語 capture scripts を定義する。決まりはほかに 1.7.0 と同じ |
 | [1.7.0](https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/) | 2026-11-28 | `http-message-length` を `request` レコードにも掛け、本文のある `request` は長さを持つ。本文を得られなかった `request` は `WARC-Truncated: unspecified` を持ち、長さを外す |
 | [1.6.0](https://uraitakahito.github.io/browserhive-warc-spec/1.6.0/) | 2026-11-28 | `response` レコードの HTTP の `Content-Length` は持つ payload の長さを言い、`Transfer-Encoding` を持たない（本文を送らないレスポンスも）。送る本文を持たないレスポンスに `205` を足す |
 | [1.5.0](https://uraitakahito.github.io/browserhive-warc-spec/1.5.0/) | 2026-11-15 | フレームの写し（同じ origin の子フレームの文書の写し）を `urn:browserhive:frame-snapshot:` の `resource` と `metadata` の組で足し、親の写しの枠が `data-browserhive-snapshot` で名指す |
@@ -16,6 +17,21 @@ BrowserHive WARC Profile の版ごとの変更。
 | [1.2.0](https://uraitakahito.github.io/browserhive-warc-spec/1.2.0/) | 2026-11-07 | 隠すシークレットの値を、`request`・`response` のレコードの中で `***` に置き換える |
 | [1.1.0](https://uraitakahito.github.io/browserhive-warc-spec/1.1.0/) | 2026-11-02 | 写し（取り込みの時点ごとの文書の DOM）を `resource` と `metadata` の組で足す |
 | [1.0.0](https://uraitakahito.github.io/browserhive-warc-spec/1.0.0/) | 2026-11-01 | 最初の版。BrowserHive WACZ Profile 1.15.0 から WARC のレコードの決まりを移す |
+
+---
+
+## 1.8.0
+
+取り込みを頼む側が送り、producer がページで走らせるコードを **capture scripts** と呼び、写し（snapshot）と
+スクリーンショットの時点の名 `after-behaviors` を `after-capture-scripts` に改めた。「behaviors」の時点は、
+ページ自身の JavaScript のことと読まれやすかった（CAPTURE-506）。
+
+- 写しとスクリーンショットの時点: `after-load` と `after-capture-scripts`。レコードの `WARC-Target-URI`
+  （`urn:browserhive:snapshot:after-capture-scripts:…`・`urn:browserhive:screenshot:after-capture-scripts:…`）と、
+  `metadata` レコードの `snapshot`・`screenshot` の欄も同じ名で書く
+- 語 capture scripts を定義した。behavior の語は残し、capture scripts のうちページが読み込まれた後に走るものを言う
+- 1.7.0 までの版に適合するファイルは、古い名 `after-behaviors` のまま。どの名で読むかは、warcinfo の `conformsTo`
+  が名乗る版で決める。ほかの決まりは 1.7.0 と同じ
 
 ---
 

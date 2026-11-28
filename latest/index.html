@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>BrowserHive WARC Profile 1.7.0</title>
+<title>BrowserHive WARC Profile 1.8.0</title>
 <!--
   ReSpec is bundled in this repository and loaded by a relative path. GitHub
   Pages serves the main branch as it is, so the script runs in the reader's
@@ -176,7 +176,7 @@
       <tr><td><code>conformsTo</code></td><td>yes</td>
           <td>The URL of the version of this specification the file claims to
           satisfy. For this version,
-          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/</code>.
+          <code>https://uraitakahito.github.io/browserhive-warc-spec/1.8.0/</code>.
           The field <em class="rfc2119">MUST</em> appear exactly once.</td></tr>
       <tr><td><code>format</code></td><td>yes</td>
           <td><code>WARC File Format 1.1</code>.</td></tr>
@@ -201,7 +201,7 @@ Content-Length: 203
 
 software: browserhive/32.1.0
 format: WARC File Format 1.1
-conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.7.0/
+conformsTo: https://uraitakahito.github.io/browserhive-warc-spec/1.8.0/
 robots-policy: ignore
 description: Capture of https://shop.example/</pre>
   <p>
@@ -826,14 +826,18 @@ target: page</pre>
   <ul>
     <li><code>after-load</code> &mdash; the page has loaded and settled, and no
         <a>behavior</a> has run on it.</li>
-    <li><code>after-behaviors</code> &mdash; the behaviors the capture ran on
+    <li><code>after-capture-scripts</code> &mdash; the behaviors the capture ran on
         the page have finished.</li>
   </ul>
   <p>
     A <dfn>behavior</dfn> is code that a capture runs on the page besides the
-    page's own, for instance to fill in a search form and send it. A capture
+    page's own, for instance to fill in a search form and send it. The code
+    that whoever asks for the capture sends for the producer to run on the
+    page is called the <dfn>capture scripts</dfn>. The behaviors are the
+    capture scripts that run once the page has loaded, and the stage
+    <code>after-capture-scripts</code> is named after them. A capture
     takes at most one snapshot at each stage, and none at
-    <code>after-behaviors</code> unless it ran a behavior. With the snapshot
+    <code>after-capture-scripts</code> unless it ran a behavior. With the snapshot
     of a stage, it copies the documents of the page's frames that it can read
     (see <a href="#frame-snapshots"></a>). The code of the
     behaviors, which stages a capture took, why it took none at a stage, and
@@ -886,7 +890,7 @@ target: page</pre>
 WARC/1.1
 WARC-Type: resource
 WARC-Record-ID: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
-WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:snapshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.415Z
 Content-Type: text/html; charset=utf-8
 WARC-Block-Digest: sha256:RK4XPNMRVNTPF7OWYGYRXMHDFC5H2RF7BH74Y2KKIRRELLG6MZJQ
@@ -935,7 +939,7 @@ Content-Length: 237
       <tbody>
         <tr><td><code>snapshot</code></td><td>yes</td>
             <td>The stage at which the producer took the snapshot:
-            <code>after-load</code> or <code>after-behaviors</code>.</td></tr>
+            <code>after-load</code> or <code>after-capture-scripts</code>.</td></tr>
         <tr><td><code>document-uri</code></td><td>yes</td>
             <td>The URL of the document at the moment of the snapshot, as the
             browser held it, fragment included, with the value of any
@@ -956,13 +960,13 @@ Content-Length: 237
     <pre class="text">
 WARC/1.1
 WARC-Type: metadata
-WARC-Target-URI: urn:browserhive:snapshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:snapshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.415Z
 WARC-Refers-To: &lt;urn:uuid:d6874c5c-9710-40d4-9fb8-ceb24bb0dfc8&gt;
 Content-Type: application/warc-fields
-Content-Length: 158
+Content-Length: 164
 
-snapshot: after-behaviors
+snapshot: after-capture-scripts
 document-uri: https://shop.example/results
 document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
 secrets-replaced: 0</pre>
@@ -1318,13 +1322,13 @@ secrets-replaced: 0</pre>
   <ul>
     <li><code>after-load</code> &mdash; the page has loaded and settled, and no
         <a>behavior</a> has run on it.</li>
-    <li><code>after-behaviors</code> &mdash; the behaviors the capture ran on
+    <li><code>after-capture-scripts</code> &mdash; the behaviors the capture ran on
         the page have finished.</li>
   </ul>
   <p>
     These are the stages of a <a>snapshot</a>, under the same names. A
     capture keeps at most one screenshot of each stage, and none of
-    <code>after-behaviors</code> unless it ran a behavior. It need not keep
+    <code>after-capture-scripts</code> unless it ran a behavior. It need not keep
     any. Which stages
     a capture kept a screenshot of, and why it kept none of a stage, are
     recorded by the package that holds the file
@@ -1381,7 +1385,7 @@ secrets-replaced: 0</pre>
     <pre class="text">
 WARC-Type: resource
 WARC-Record-ID: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
-WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:screenshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.512Z
 Content-Type: image/webp
 WARC-Block-Digest: sha256:22EW7ABMRNGE576GNNPFAU3XI6356UR7XGOFKREPIXIPOJTPDSLA
@@ -1421,7 +1425,7 @@ Content-Length: 18764</pre>
       <tbody>
         <tr><td><code>screenshot</code></td><td>yes</td>
             <td>The stage at which the producer took the screenshot:
-            <code>after-load</code> or <code>after-behaviors</code>.</td></tr>
+            <code>after-load</code> or <code>after-capture-scripts</code>.</td></tr>
         <tr><td><code>document-uri</code></td><td>yes</td>
             <td>The URL of the document in the page's main frame at the moment
             of the screenshot, as the browser held it, fragment included, with
@@ -1471,13 +1475,13 @@ nonzero            = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"</pre>
 WARC/1.1
 WARC-Type: metadata
 WARC-Record-ID: &lt;urn:uuid:0d661333-78a5-4d57-9856-269ae8507e29&gt;
-WARC-Target-URI: urn:browserhive:screenshot:after-behaviors:https://shop.example/results
+WARC-Target-URI: urn:browserhive:screenshot:after-capture-scripts:https://shop.example/results
 WARC-Date: 2026-11-02T01:20:07.512Z
 WARC-Refers-To: &lt;urn:uuid:8f3a1c7e-52d4-4b9a-b6e0-1d7c9a4f2e35&gt;
 Content-Type: application/warc-fields
-Content-Length: 204
+Content-Length: 210
 
-screenshot: after-behaviors
+screenshot: after-capture-scripts
 document-uri: https://shop.example/results
 document-record: &lt;urn:uuid:3d6b2f0e-8c1a-4b7e-a2f4-6e9d1c5b8a07&gt;
 viewport: 1280x800
