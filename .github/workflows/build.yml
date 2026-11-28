@@ -36,6 +36,8 @@ jobs:
           - 1.6.0/ja
           - 1.7.0
           - 1.7.0/ja
+          - 1.8.0
+          - 1.8.0/ja
     steps:
       - uses: actions/checkout@v4
 
